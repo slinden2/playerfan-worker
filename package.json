@@ -1,0 +1,26 @@
+{
+  "name": "playerfan-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@prisma/client": "^2.13.1",
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "@prisma/cli": "^2.13.1"
+  },
+  "scripts": {
+    "fetchConferences": "node ./jobs/fetchConferences.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slinden2/playerfan-worker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/slinden2/playerfan-worker/issues"
+  },
+  "homepage": "https://github.com/slinden2/playerfan-worker#readme"
+}
