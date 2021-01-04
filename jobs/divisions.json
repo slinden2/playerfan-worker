@@ -1,0 +1,34 @@
+[
+  {
+    "divisionId": 17,
+    "link": "/api/v1/divisions/17",
+    "name": "Atlantic",
+    "shortName": "ATL",
+    "abbreviation": "A",
+    "active": true
+  },
+  {
+    "divisionId": 16,
+    "link": "/api/v1/divisions/16",
+    "name": "Central",
+    "shortName": "CEN",
+    "abbreviation": "C",
+    "active": true
+  },
+  {
+    "divisionId": 18,
+    "link": "/api/v1/divisions/18",
+    "name": "Metropolitan",
+    "shortName": "Metro",
+    "abbreviation": "M",
+    "active": true
+  },
+  {
+    "divisionId": 15,
+    "link": "/api/v1/divisions/15",
+    "name": "Pacific",
+    "shortName": "PAC",
+    "abbreviation": "P",
+    "active": true
+  }
+]

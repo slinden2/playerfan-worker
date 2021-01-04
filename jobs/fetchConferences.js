@@ -23,10 +23,9 @@ const fetchConferences = async () => {
         active: conference.active,
       };
 
-      const savedConference = await prisma.conference.create({
+      await prisma.conference.create({
         data: newConference,
       });
-      console.log(savedConference);
     }
   } catch ({ name, message }) {
     console.error("fetch-conferences.fetchConferences");

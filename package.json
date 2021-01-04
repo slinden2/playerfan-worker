@@ -11,7 +11,8 @@
     "@prisma/cli": "^2.13.1"
   },
   "scripts": {
-    "fetchConferences": "node ./jobs/fetchConferences.js"
+    "fetchConferences": "node ./jobs/fetchConferences.js",
+    "fetchDivisions": "node ./jobs/fetchDivisions.js"
   },
   "repository": {
     "type": "git",
