@@ -32,43 +32,50 @@ model User {
 
 model Conference {
   id           String     @id @default(cuid())
-  conferenceId Int        @unique
-  link         String     @unique
-  name         String     @unique
-  shortName    String     @unique
-  abbreviation String     @unique
+  season       String
+  conferenceId Int
+  link         String
+  name         String
+  shortName    String
+  abbreviation String
   active       Boolean
   divisions    Division[]
   teams        Team[]
+
+  @@unique([conferenceId, season])
 }
 
 model Division {
   id           String     @id @default(cuid())
-  divisionId   Int        @unique
-  link         String     @unique
-  name         String     @unique
-  shortName    String     @unique
-  abbreviation String     @unique
+  season       String
+  divisionId   Int
+  link         String
+  name         String
+  shortName    String
+  abbreviation String
   active       Boolean
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
   teams        Team[]
+
+  @@unique([divisionId, season])
 }
 
 model Team {
   id                 String      @id @default(cuid())
-  teamId             Int         @unique
-  link               String      @unique
-  siteLink           String      @unique
-  name               String      @unique
-  teamName           String      @unique
-  shortName          String      @unique
-  abbreviation       String      @unique
+  season             String
+  teamId             Int
+  link               String
+  siteLink           String
+  name               String
+  teamName           String
+  shortName          String
+  abbreviation       String
   locationName       String
   firstYearOfPlay    Int
   officialSiteUrl    String
   active             Boolean
-  twitterHashtag     String      @unique
+  twitterHashtag     String
   conference         Conference  @relation(fields: [conferenceId], references: [id])
   conferenceId       String
   division           Division    @relation(fields: [divisionId], references: [id])
@@ -81,6 +88,8 @@ model Team {
   milestones         Milestone[] @relation("TeamMilestone")
   milestonesAgainst  Milestone[] @relation("TeamMilestoneAgainst")
   goalData           GoalData[]  @relation("TeamGoalData")
+
+  @@unique([season, teamId])
 }
 
 model Linescore {

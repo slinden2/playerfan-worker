@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
 const { PrismaClient } = require("@prisma/client");
 const axios = require("axios");
 
@@ -10,11 +14,17 @@ const fetchConferences = async () => {
     const response = await axios.get(conferenceUrl);
     for (const conference of response.data.conferences) {
       const conferenceInDb = await prisma.conference.findUnique({
-        where: { conferenceId: conference.id },
+        where: {
+          conferenceId_season: {
+            conferenceId: conference.id,
+            season: process.env.SEASON,
+          },
+        },
       });
       if (conferenceInDb) continue;
 
       const newConference = {
+        season: process.env.SEASON,
         conferenceId: conference.id,
         name: conference.name,
         link: conference.link,
