@@ -15,8 +15,8 @@ const fetchConferences = async () => {
     for (const conference of response.data.conferences) {
       const conferenceInDb = await prisma.conference.findUnique({
         where: {
-          conferenceId_season: {
-            conferenceId: conference.id,
+          season_conferenceIdApi: {
+            conferenceIdApi: conference.id,
             season: process.env.SEASON,
           },
         },
@@ -25,7 +25,7 @@ const fetchConferences = async () => {
 
       const newConference = {
         season: process.env.SEASON,
-        conferenceId: conference.id,
+        conferenceIdApi: conference.id,
         name: conference.name,
         link: conference.link,
         abbreviation: conference.abbreviation,

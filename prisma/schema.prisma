@@ -31,40 +31,40 @@ model User {
 }
 
 model Conference {
-  id           String     @id @default(cuid())
-  season       String
-  conferenceId Int
-  link         String
-  name         String
-  shortName    String
-  abbreviation String
-  active       Boolean
-  divisions    Division[]
-  teams        Team[]
+  id              String     @id @default(cuid())
+  season          String
+  conferenceIdApi Int
+  link            String
+  name            String
+  shortName       String
+  abbreviation    String
+  active          Boolean
+  divisions       Division[]
+  teams           Team[]
 
-  @@unique([conferenceId, season])
+  @@unique([season, conferenceIdApi])
 }
 
 model Division {
-  id           String     @id @default(cuid())
-  season       String
-  divisionId   Int
-  link         String
-  name         String
-  shortName    String
-  abbreviation String
-  active       Boolean
-  conference   Conference @relation(fields: [conferenceId], references: [id])
-  conferenceId String
-  teams        Team[]
+  id            String     @id @default(cuid())
+  season        String
+  divisionIdApi Int
+  link          String
+  name          String
+  shortName     String
+  abbreviation  String
+  active        Boolean
+  conference    Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId  String
+  teams         Team[]
 
-  @@unique([divisionId, season])
+  @@unique([season, divisionIdApi])
 }
 
 model Team {
   id                 String      @id @default(cuid())
   season             String
-  teamId             Int
+  teamIdApi          Int
   link               String
   siteLink           String
   name               String
@@ -89,7 +89,7 @@ model Team {
   milestonesAgainst  Milestone[] @relation("TeamMilestoneAgainst")
   goalData           GoalData[]  @relation("TeamGoalData")
 
-  @@unique([season, teamId])
+  @@unique([season, teamIdApi])
 }
 
 model Linescore {
@@ -144,7 +144,7 @@ enum Position {
 
 model Player {
   id                 String           @id @default(cuid())
-  playerId           Int              @unique
+  playerIdApi        Int              @unique
   firstName          String
   lastName           String
   primaryNumber      Int
@@ -235,7 +235,7 @@ model SkaterBoxscore {
   game                 Game     @relation("GameSkaterBoxscores", fields: [gameId], references: [id])
   gameId               String
 
-  @@unique([playerId, gameId])
+  @@unique([gameId, playerId])
 }
 
 model GoalieBoxscore {
@@ -262,7 +262,7 @@ model GoalieBoxscore {
   game                    Game     @relation("GameGoalieBoxscores", fields: [gameId], references: [id])
   gameId                  String
 
-  @@unique([playerId, gameId])
+  @@unique([gameId, playerId])
 }
 
 enum MilestoneType {
@@ -271,31 +271,31 @@ enum MilestoneType {
 }
 
 model Milestone {
-  id                          String        @id @default(cuid())
-  gamePk                      Int
-  gameDate                    DateTime
-  apiDate                     DateTime
-  teamId                      Int
-  opponentId                  Int
-  playerId                    Int
-  eventId                     Int
-  type                        MilestoneType
-  periodTime                  Int
-  periodNumber                Int
-  team                        Team          @relation("TeamMilestone", fields: [teamId_TeamMilestone], references: [id])
-  teamId_TeamMilestone        String
-  opponent                    Team          @relation("TeamMilestoneAgainst", fields: [opponentId_MilestoneAgainst], references: [id])
-  opponentId_MilestoneAgainst String
-  player                      Player        @relation("PlayerMilestone", fields: [playerId_PlayerMilestone], references: [id])
-  playerId_PlayerMilestone    String
-  goalData                    GoalData?     @relation("MilestoneGoalData")
-  goalDataId                  String?
-  highlight                   Highlight?    @relation("MilestoneHighlight")
-  likedBy                     User[]        @relation("UserLikesMilestone", references: [id])
-  comments                    Comment[]     @relation("MilestoneHasComments")
+  id            String        @id @default(cuid())
+  gamePk        Int
+  gameDate      DateTime
+  apiDate       DateTime
+  teamIdApi     Int
+  opponentIdApi Int
+  playerIdApi   Int
+  eventIdApi    Int
+  type          MilestoneType
+  periodTime    Int
+  periodNumber  Int
+  team          Team          @relation("TeamMilestone", fields: [teamId], references: [id])
+  teamId        String
+  opponent      Team          @relation("TeamMilestoneAgainst", fields: [opponentId], references: [id])
+  opponentId    String
+  player        Player        @relation("PlayerMilestone", fields: [playerId], references: [id])
+  playerId      String
+  goalData      GoalData?     @relation("MilestoneGoalData")
+  goalDataId    String?
+  highlight     Highlight?    @relation("MilestoneHighlight")
+  likedBy       User[]        @relation("UserLikesMilestone", references: [id])
+  comments      Comment[]     @relation("MilestoneHasComments")
 
   highlightId String
-  @@unique([gamePk, eventId])
+  @@unique([gamePk, eventIdApi])
 }
 
 enum PeriodType {
@@ -312,8 +312,8 @@ model GoalData {
   apiDate         DateTime
   type            MilestoneType
   shotType        String
-  eventIdx        Int
-  eventId         Int
+  eventIdxApi     Int
+  eventIdApi      Int
   periodType      PeriodType
   dateTime        DateTime
   coordX          Int
@@ -333,7 +333,7 @@ model GoalData {
   milestone       Milestone?    @relation("MilestoneGoalData", fields: [milestoneId], references: [id])
   milestoneId     String?
 
-  @@unique([gamePk, eventId])
+  @@unique([gamePk, eventIdApi])
 }
 
 model Comment {
@@ -351,21 +351,21 @@ enum HighlightType {
 }
 
 model Highlight {
-  id              String        @id @default(cuid())
-  type            HighlightType
-  videoId         Int           @unique
-  title           String
-  blurb           String
-  description     String
-  duration        Int
-  mediaPlaybackId Int
-  milestone       Milestone?    @relation("MilestoneHighlight", fields: [milestoneId], references: [id])
-  milestoneId     String?
-  gameRecap       Game?         @relation("GameHighlightRecap", fields: [gameRecapId], references: [id])
-  gameRecapId     String?
-  gameCondensed   Game?         @relation("GameHighlightCondensed", fields: [gameCondensedId], references: [id])
-  gameCondensedId String?
-  playbacks       Playback[]    @relation("HighlightHasPlaybacks")
+  id                 String        @id @default(cuid())
+  type               HighlightType
+  videoIdApi         Int           @unique
+  title              String
+  blurb              String
+  description        String
+  duration           Int
+  mediaPlaybackIdApi Int
+  milestone          Milestone?    @relation("MilestoneHighlight", fields: [milestoneId], references: [id])
+  milestoneId        String?
+  gameRecap          Game?         @relation("GameHighlightRecap", fields: [gameRecapId], references: [id])
+  gameRecapId        String?
+  gameCondensed      Game?         @relation("GameHighlightCondensed", fields: [gameCondensedId], references: [id])
+  gameCondensedId    String?
+  playbacks          Playback[]    @relation("HighlightHasPlaybacks")
 }
 
 model Playback {

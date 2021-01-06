@@ -7,12 +7,12 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
+// const axios = require("axios");
 const divisions = require("./divisions.json");
 
 const prisma = new PrismaClient();
 
-const divionsUrl = "https://statsapi.web.nhl.com/api/v1/divisions";
+// const divionsUrl = "https://statsapi.web.nhl.com/api/v1/divisions";
 
 const ConferenceDivMap = {
   ATL: 6,
@@ -26,26 +26,29 @@ const fetchDivisions = async () => {
     for (const division of divisions) {
       const divisionInDb = await prisma.division.findUnique({
         where: {
-          divisionId_season: {
-            divisionId: division.divisionId,
+          season_divisionIdApi: {
+            divisionIdApi: division.divisionId,
             season: process.env.SEASON,
           },
         },
       });
       if (divisionInDb) continue;
 
-      const conferenceId = ConferenceDivMap[division.shortName];
+      const conferenceIdApi = ConferenceDivMap[division.shortName];
 
       const newDivision = {
         season: process.env.SEASON,
-        divisionId: division.divisionId,
+        divisionIdApi: division.divisionId,
         link: division.link,
         name: division.name,
         shortName: division.shortName,
         abbreviation: division.abbreviation,
         conference: {
           connect: {
-            conferenceId_season: { conferenceId, season: process.env.SEASON },
+            season_conferenceIdApi: {
+              conferenceIdApi,
+              season: process.env.SEASON,
+            },
           },
         },
         active: division.active,

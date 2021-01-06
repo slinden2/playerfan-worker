@@ -8,7 +8,7 @@ if (process.env.NODE_ENV !== "production") {
 
 const { PrismaClient } = require("@prisma/client");
 const teams = require("./teams.json");
-const { generateTeamSiteLink } = require("./fetchHelpers");
+const { generateSiteLink } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
@@ -147,19 +147,22 @@ const fetchTeams = async () => {
       try {
         const teamInDb = await prisma.team.findUnique({
           where: {
-            season_teamId: { teamId: team.teamId, season: process.env.SEASON },
+            season_teamIdApi: {
+              teamIdApi: team.teamId,
+              season: process.env.SEASON,
+            },
           },
         });
         if (teamInDb) continue;
 
-        const conferenceId = conferenceTeamMap[team.abbreviation].conference;
-        const divisionId = conferenceTeamMap[team.abbreviation].division;
+        const conferenceIdApi = conferenceTeamMap[team.abbreviation].conference;
+        const divisionIdApi = conferenceTeamMap[team.abbreviation].division;
 
         const newTeam = {
           season: process.env.SEASON,
-          teamId: team.teamId,
+          teamIdApi: team.teamId,
           link: team.link,
-          siteLink: generateTeamSiteLink(team.name),
+          siteLink: generateSiteLink(team.name),
           name: team.name,
           teamName: team.teamName,
           shortName: team.shortName,
@@ -169,12 +172,18 @@ const fetchTeams = async () => {
           officialSiteUrl: team.officialSiteUrl,
           conference: {
             connect: {
-              conferenceId_season: { conferenceId, season: process.env.SEASON },
+              season_conferenceIdApi: {
+                conferenceIdApi,
+                season: process.env.SEASON,
+              },
             },
           },
           division: {
             connect: {
-              divisionId_season: { divisionId, season: process.env.SEASON },
+              season_divisionIdApi: {
+                divisionIdApi,
+                season: process.env.SEASON,
+              },
             },
           },
           twitterHashtag: team.twitterHashtag,
