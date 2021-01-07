@@ -13,6 +13,7 @@
     "dotenv": "^8.2.0"
   },
   "scripts": {
+    "initLeague": "node ./jobs/initLeague.js",
     "fetchConferences": "node ./jobs/fetchConferences.js",
     "fetchDivisions": "node ./jobs/fetchDivisions.js",
     "fetchTeams": "node ./jobs/fetchTeams.js",
