@@ -16,7 +16,7 @@
     "fetchConferences": "node ./jobs/fetchConferences.js",
     "fetchDivisions": "node ./jobs/fetchDivisions.js",
     "fetchTeams": "node ./jobs/fetchTeams.js",
-    "fetchGames": "node ./jobs/fetchGames"
+    "fetchGames": "node ./jobs/fetchGames.js"
   },
   "repository": {
     "type": "git",
