@@ -27,7 +27,7 @@ model User {
   isVerified      Boolean
   role            Role        @default(USER)
   favoritePlayers Player[]    @relation("UserFavoritePlayers")
-  likedMilestones Milestone[] @relation("UserLikesMilestone")
+  likedHighlights Highlight[] @relation("UserLikesHighlight")
 }
 
 model Conference {
@@ -62,7 +62,7 @@ model Division {
 }
 
 model Team {
-  id                 String      @id @default(cuid())
+  id                 String          @id @default(cuid())
   season             String
   teamIdApi          Int
   link               String
@@ -76,18 +76,18 @@ model Team {
   officialSiteUrl    String
   active             Boolean
   twitterHashtag     String
-  conference         Conference  @relation(fields: [conferenceId], references: [id])
+  conference         Conference      @relation(fields: [conferenceId], references: [id])
   conferenceId       String
-  division           Division    @relation(fields: [divisionId], references: [id])
+  division           Division        @relation(fields: [divisionId], references: [id])
   divisionId         String
-  players            Player[]    @relation("TeamPlayer")
-  awayGames          Game[]      @relation("TeamAwayGames")
-  homeGames          Game[]      @relation("TeamHomeGames")
-  linescores         Linescore[] @relation("TeamLinescore")
-  opponentLinescores Linescore[] @relation("OpponentLinescore")
-  milestones         Milestone[] @relation("TeamMilestone")
-  milestonesAgainst  Milestone[] @relation("TeamMilestoneAgainst")
-  goalData           GoalData[]  @relation("TeamGoalData")
+  players            Player[]        @relation("TeamPlayer")
+  awayGames          Game[]          @relation("TeamAwayGames")
+  homeGames          Game[]          @relation("TeamHomeGames")
+  linescores         Linescore[]     @relation("TeamLinescore")
+  opponentLinescores Linescore[]     @relation("OpponentLinescore")
+  highlights         Highlight[]     @relation("TeamHighlight")
+  highlightsAgainst  Highlight[]     @relation("TeamHighlightAgainst")
+  highlightMeta      HighlightMeta[] @relation("TeamHighlightMeta")
 
   @@unique([season, teamIdApi])
 }
@@ -143,37 +143,36 @@ enum Position {
 }
 
 model Player {
-  id                 String           @id @default(cuid())
-  playerIdApi        Int              @unique
-  firstName          String
-  lastName           String
-  primaryNumber      Int
-  link               String
-  siteLink           String
-  birthDate          DateTime
-  birthCity          String
-  birthStateProvince String?
-  birthCountry       String
-  nationality        String
-  height             Int
-  weight             Int
-  alternateCaptain   Boolean
-  captain            Boolean
-  rookie             Boolean
-  shootsCatches      ShootsCatches
-  rosterStatus       RosterStatus
-  primaryPosition    Position
-  active             Boolean
-  currentTeam        Team             @relation("TeamPlayer", fields: [teamId], references: [id])
-  teamId             String
-  skaterBoxscores    SkaterBoxscore[] @relation("PlayerSkaterBoxscores")
-  goalieBoxscores    GoalieBoxscore[] @relation("PlayerGoalieBoxscores")
-  goalDataGoal       GoalData[]       @relation("PlayerGoalDataGoal")
-  goalDataAssist1    GoalData[]       @relation("PlayerGoalDataAssist1")
-  goalDataAssist2    GoalData[]       @relation("PlayerGoalDataAssist2")
-  goalDataGoalie     GoalData[]       @relation("PlayerGoalDataGoalie")
-  milestones         Milestone[]      @relation("PlayerMilestone")
-  favoritedBy        User[]           @relation("UserFavoritePlayers", references: [id])
+  id                   String           @id @default(cuid())
+  playerIdApi          Int              @unique
+  firstName            String
+  lastName             String
+  primaryNumber        Int
+  link                 String
+  siteLink             String
+  birthDate            DateTime
+  birthCity            String
+  birthStateProvince   String?
+  birthCountry         String
+  nationality          String
+  height               Int
+  weight               Int
+  alternateCaptain     Boolean
+  captain              Boolean
+  rookie               Boolean
+  shootsCatches        ShootsCatches
+  rosterStatus         RosterStatus
+  primaryPosition      Position
+  active               Boolean
+  currentTeam          Team             @relation("TeamPlayer", fields: [teamId], references: [id])
+  teamId               String
+  skaterBoxscores      SkaterBoxscore[] @relation("PlayerSkaterBoxscores")
+  goalieBoxscores      GoalieBoxscore[] @relation("PlayerGoalieBoxscores")
+  highlightMetaGoal    HighlightMeta[]  @relation("PlayerHighlightMetaGoal")
+  highlightMetaAssist1 HighlightMeta[]  @relation("PlayerHighlightMetaAssist1")
+  highlightMetaAssist2 HighlightMeta[]  @relation("PlayerHighlightMetaAssist2")
+  highlightMetaGoalie  HighlightMeta[]  @relation("PlayerHighlightMetaGoalie")
+  favoritedBy          User[]           @relation("UserFavoritePlayers", references: [id])
 }
 
 enum GameType {
@@ -197,9 +196,7 @@ model Game {
   homeTeamId      String
   skaterBoxscores SkaterBoxscore[] @relation("GameSkaterBoxscores")
   goalieBoxscores GoalieBoxscore[] @relation("GameGoalieBoxscores")
-  gameRecap       Highlight?       @relation("GameHighlightRecap")
-  gameCondensed   Highlight?       @relation("GameHighlightCondensed")
-  milestones      Milestone[]      @relation("GameMilestones")
+  highlight       Highlight[]      @relation("GameHighlight")
 }
 
 enum Decision {
@@ -265,81 +262,15 @@ model GoalieBoxscore {
   @@unique([gameId, playerId])
 }
 
-enum MilestoneType {
+enum VideoDataType {
   GOAL
   SHOT
-}
-
-model Milestone {
-  id            String        @id @default(cuid())
-  gamePk        Int
-  gameDate      DateTime
-  apiDate       DateTime
-  teamIdApi     Int
-  opponentIdApi Int
-  playerIdApi   Int
-  eventIdApi    Int
-  type          MilestoneType
-  periodTime    Int
-  periodNumber  Int
-  game          Game          @relation("GameMilestones", fields: [gameId], references: [id])
-  gameId        String
-  team          Team          @relation("TeamMilestone", fields: [teamId], references: [id])
-  teamId        String
-  opponent      Team          @relation("TeamMilestoneAgainst", fields: [opponentId], references: [id])
-  opponentId    String
-  player        Player        @relation("PlayerMilestone", fields: [playerId], references: [id])
-  playerId      String
-  goalData      GoalData?     @relation("MilestoneGoalData")
-  highlight     Highlight?    @relation("MilestoneHighlight")
-  likedBy       User[]        @relation("UserLikesMilestone", references: [id])
-  comments      Comment[]     @relation("MilestoneHasComments")
-
-  @@unique([gamePk, eventIdApi])
 }
 
 enum PeriodType {
   REGULAR
   OVERTIME
   SHOOTOUT
-}
-
-model GoalData {
-  id              String        @id @default(cuid())
-  gameWinningGoal Boolean
-  emptyNet        Boolean
-  gamePk          Int
-  apiDate         DateTime
-  type            MilestoneType
-  shotType        String
-  eventIdxApi     Int
-  eventIdApi      Int
-  periodType      PeriodType
-  dateTime        DateTime
-  coordX          Int
-  coordY          Int
-  scorer          Player        @relation("PlayerGoalDataGoal", fields: [scorerId], references: [id])
-  scorerId        String
-  assist1         Player        @relation("PlayerGoalDataAssist1", fields: [assist1Id], references: [id])
-  assist1Id       String
-  assist2         Player        @relation("PlayerGoalDataAssist2", fields: [assist2Id], references: [id])
-  assist2Id       String
-  goalie          Player        @relation("PlayerGoalDataGoalie", fields: [goalieId], references: [id])
-  goalieId        String
-  team            Team          @relation("TeamGoalData", fields: [teamId], references: [id])
-  teamId          String
-  milestone       Milestone     @relation("MilestoneGoalData", fields: [milestoneId], references: [id])
-  milestoneId     String
-
-  @@unique([gamePk, eventIdApi])
-}
-
-model Comment {
-  id          String    @id @default(cuid())
-  createdAt   DateTime  @default(now())
-  content     String
-  milestone   Milestone @relation("MilestoneHasComments", fields: [milestoneId], references: [id])
-  milestoneId String
 }
 
 enum HighlightType {
@@ -349,21 +280,66 @@ enum HighlightType {
 }
 
 model Highlight {
-  id                 String        @id @default(cuid())
+  id                 String         @id @default(cuid())
   type               HighlightType
-  videoIdApi         Int           @unique
+  gamePk             Int
+  apiDate            DateTime
+  videoIdApi         Int            @unique
   title              String
   blurb              String
   description        String
   duration           Int
   mediaPlaybackIdApi Int
-  milestone          Milestone?    @relation("MilestoneHighlight", fields: [milestoneId], references: [id])
-  milestoneId        String?
-  gameRecap          Game?         @relation("GameHighlightRecap", fields: [gameRecapId], references: [id])
-  gameRecapId        String?
-  gameCondensed      Game?         @relation("GameHighlightCondensed", fields: [gameCondensedId], references: [id])
-  gameCondensedId    String?
-  playbacks          Playback[]    @relation("HighlightHasPlaybacks")
+  eventIdApi         Int?
+  game               Game           @relation("GameHighlight", fields: [gameId], references: [id])
+  gameId             String
+  team               Team?          @relation("TeamHighlight", fields: [teamId], references: [id])
+  teamId             String?
+  opponent           Team?          @relation("TeamHighlightAgainst", fields: [opponentId], references: [id])
+  opponentId         String?
+  highlightMeta      HighlightMeta? @relation("HighlightHighlightMeta")
+  playbacks          Playback[]     @relation("HighlightHasPlaybacks")
+  comments           Comment[]      @relation("HighlightComment")
+  likedBy            User[]         @relation("UserLikesHighlight")
+}
+
+model HighlightMeta {
+  id              String        @id @default(cuid())
+  gamePk          Int
+  eventIdxApi     Int
+  eventIdApi      Int
+  gameWinningGoal Boolean
+  emptyNet        Boolean
+  type            VideoDataType
+  shotType        String
+  periodType      PeriodType
+  periodTime      Int
+  periodNumber    Int
+  dateTime        DateTime
+  coordX          Int
+  coordY          Int
+  scorer          Player        @relation("PlayerHighlightMetaGoal", fields: [scorerId], references: [id])
+  scorerId        String
+  assist1         Player        @relation("PlayerHighlightMetaAssist1", fields: [assist1Id], references: [id])
+  assist1Id       String
+  assist2         Player        @relation("PlayerHighlightMetaAssist2", fields: [assist2Id], references: [id])
+  assist2Id       String
+  goalie          Player        @relation("PlayerHighlightMetaGoalie", fields: [goalieId], references: [id])
+  goalieId        String
+  team            Team          @relation("TeamHighlightMeta", fields: [teamId], references: [id])
+  teamId          String
+  highlight       Highlight     @relation("HighlightHighlightMeta", fields: [highlightId], references: [id])
+  highlightId     String
+
+  @@unique([gamePk, eventIdApi])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  content     String
+  highlight   Highlight @relation("HighlightComment", fields: [highlightId], references: [id])
+  highlightId String
 }
 
 model PlaybackType {

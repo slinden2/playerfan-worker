@@ -28,10 +28,14 @@ const convertMMSStoSec = (time) => {
   return parseInt(mins * 60) + parseInt(secs);
 };
 
+const gamesUrl = (date) =>
+  `https://statsapi.web.nhl.com/api/v1/schedule?date=${date}`;
+
 module.exports = {
   generateSiteLink,
   isValidDate,
   convertFtToCm,
   convertLbsToKg,
   convertMMSStoSec,
+  gamesUrl,
 };

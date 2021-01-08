@@ -5,8 +5,7 @@ if (process.env.NODE_ENV !== "production") {
 const { PrismaClient } = require("@prisma/client");
 const axios = require("axios");
 
-const { isValidDate } = require("./fetchHelpers");
-const createHighlight = require("./createHighlight");
+const { isValidDate, gamesUrl } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
@@ -20,12 +19,6 @@ const timeYesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
 // construct current date in YYYY-MM-DD format
 const UTC_DATE = timeYesterday.toISOString().split("T")[0];
 const date = process.argv[2] || UTC_DATE;
-
-const gamesUrl = (date) =>
-  `https://statsapi.web.nhl.com/api/v1/schedule?date=${date}`;
-
-const contentUrl = (gamePk) =>
-  `https://statsapi.web.nhl.com/api/v1/game/${gamePk}/content`;
 
 const fetchGames = async (date) => {
   const url = gamesUrl(date);
@@ -41,14 +34,7 @@ const fetchGames = async (date) => {
     }
 
     const { games } = dates[0];
-    for (const game of games) {
-      const url = contentUrl(game.gamePk);
-      console.log(`fetchGames.contentUrl - url: ${url}`);
-
-      const {
-        data: { media },
-      } = await axios.get(url);
-
+    for (const game of games.slice(0, 1)) {
       const awayTeam = await prisma.team.findUnique({
         where: {
           season_teamIdApi: {
@@ -68,13 +54,6 @@ const fetchGames = async (date) => {
         },
         select: { id: true, teamIdApi: true },
       });
-
-      const condensedGame = media.epg.find(
-        (category) => category.title === "Extended Highlights"
-      );
-      const gameRecap = media.epg.find(
-        (category) => category.title === "Recap"
-      );
 
       const apiDate = new Date(date).toISOString();
 
@@ -99,21 +78,7 @@ const fetchGames = async (date) => {
         },
       };
 
-      const savedGame = await prisma.game.create({ data: newGame });
-
-      const hasCondensedVideo = !!condensedGame.items.length;
-      const hasRecapVideo = !!gameRecap.items.length;
-
-      if (hasCondensedVideo) {
-        await createHighlight(
-          condensedGame.items[0],
-          "CONDENSED",
-          savedGame.id
-        );
-      }
-      if (hasRecapVideo) {
-        await createHighlight(gameRecap.items[0], "RECAP", savedGame.id);
-      }
+      await prisma.game.create({ data: newGame });
     }
   } catch (err) {
     console.error(`fetchGames - date: ${date}\n${err.stack}`);
