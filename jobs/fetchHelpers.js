@@ -31,6 +31,12 @@ const convertMMSStoSec = (time) => {
 const gamesUrl = (date) =>
   `https://statsapi.web.nhl.com/api/v1/schedule?date=${date}`;
 
+const contentUrl = (gamePk) =>
+  `https://statsapi.web.nhl.com/api/v1/game/${gamePk}/content`;
+
+const playerUrl = (playerId) =>
+  `https://statsapi.web.nhl.com/api/v1/people/${playerId}`;
+
 module.exports = {
   generateSiteLink,
   isValidDate,
@@ -38,4 +44,6 @@ module.exports = {
   convertLbsToKg,
   convertMMSStoSec,
   gamesUrl,
+  contentUrl,
+  playerUrl,
 };
