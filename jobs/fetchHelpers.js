@@ -34,6 +34,9 @@ const gamesUrl = (date) =>
 const contentUrl = (gamePk) =>
   `https://statsapi.web.nhl.com/api/v1/game/${gamePk}/content`;
 
+const liveFeedUrl = (gamePk) =>
+  `https://statsapi.web.nhl.com/api/v1/game/${gamePk}/feed/live`;
+
 const playerUrl = (playerId) =>
   `https://statsapi.web.nhl.com/api/v1/people/${playerId}`;
 
@@ -45,5 +48,6 @@ module.exports = {
   convertMMSStoSec,
   gamesUrl,
   contentUrl,
+  liveFeedUrl,
   playerUrl,
 };
