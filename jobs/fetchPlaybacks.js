@@ -99,7 +99,10 @@ const fetchPlaybacks = async (date) => {
       playbackPromises.push(...promises);
     }
     await Promise.all(playbackPromises);
-    await prisma.game.update({ where: { id: game.id } });
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { playbacksFetched: true },
+    });
   }
 };
 

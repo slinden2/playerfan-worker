@@ -6,10 +6,9 @@ const { PrismaClient } = require("@prisma/client");
 const axios = require("axios");
 const _ = require("lodash");
 
-const { isValidDate } = require("./fetchHelpers");
+const { isValidDate, convertMMSStoSec, contentUrl } = require("./fetchHelpers");
+const getGames = require("./getGames");
 const createPlayers = require("./createPlayers");
-const createHighlight = require("./createHighlight");
-const { convertMMSStoSec, contentUrl } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
@@ -22,13 +21,11 @@ if (inputDate) {
 
 const createHighlightObject = (
   type,
-  apiDate,
   game,
   { highlightData, milestoneData }
 ) => {
   const obj = {
     type,
-    apiDate,
     gamePk: game.gamePk,
     videoIdApi: parseInt(highlightData.id),
     title: highlightData.title.trim(),
@@ -51,24 +48,12 @@ const createHighlightObject = (
   return obj;
 };
 
+const createPlaybackObject = async () => {};
+
 const fetchHighlights = async (date) => {
-  let apiDate;
+  const games = await getGames(date);
 
-  if (date) {
-    apiDate = new Date(date).toISOString();
-  } else {
-    const latestGameDate = await prisma.game.aggregate({
-      max: { apiDate: true },
-    });
-    apiDate = latestGameDate.max.apiDate;
-  }
-
-  const latestGames = await prisma.game.findMany({
-    where: { apiDate },
-    include: { homeTeam: true, awayTeam: true },
-  });
-
-  for (const game of latestGames) {
+  for (const game of games) {
     const {
       data: { media: milestoneData },
     } = await axios.get(contentUrl(game.gamePk));
@@ -83,23 +68,23 @@ const fetchHighlights = async (date) => {
     const hasCondensedVideo = !!condensedGame.items.length;
     const hasRecapVideo = !!gameRecap.items.length;
 
+    const highlightPromises = [];
     if (hasCondensedVideo) {
-      const condensedHighlightObj = createHighlightObject(
-        "CONDENSED",
-        apiDate,
-        game,
-        {
-          highlightData: condensedGame.items[0],
-        }
+      const condensedHighlightObj = createHighlightObject("CONDENSED", game, {
+        highlightData: condensedGame.items[0],
+      });
+      highlightPromises.push(
+        prisma.highlight.create({ data: condensedHighlightObj })
       );
-      await prisma.highlight.create({ data: condensedHighlightObj });
     }
 
     if (hasRecapVideo) {
-      const recapHighlightObj = createHighlightObject("RECAP", apiDate, game, {
+      const recapHighlightObj = createHighlightObject("RECAP", game, {
         highlightData: gameRecap.items[0],
       });
-      await prisma.highlight.create({ data: recapHighlightObj });
+      highlightPromises.push(
+        prisma.highlight.create({ data: recapHighlightObj })
+      );
     }
 
     const rawMilestones = milestoneData.milestones.items.filter(
@@ -111,7 +96,6 @@ const fetchHighlights = async (date) => {
     // Sometimes there are duplicate milestones. This removes duplicates.
     const milestones = _.uniqBy(rawMilestones, "highlight.id");
 
-    const highlightPromises = [];
     for (const milestone of milestones) {
       const team =
         game.homeTeam.teamIdApi === parseInt(milestone.teamId)
@@ -137,19 +121,14 @@ const fetchHighlights = async (date) => {
           });
         }
 
-        const newHighlightData = createHighlightObject(
-          "MILESTONE",
-          apiDate,
-          game,
-          {
-            highlightData: milestone.highlight,
-            milestoneData: {
-              eventIdApi: milestone.statsEventId,
-              team,
-              opponent,
-            },
-          }
-        );
+        const newHighlightData = createHighlightObject("MILESTONE", game, {
+          highlightData: milestone.highlight,
+          milestoneData: {
+            eventIdApi: milestone.statsEventId,
+            team,
+            opponent,
+          },
+        });
 
         highlightPromises.push(
           prisma.highlight.create({
@@ -158,7 +137,12 @@ const fetchHighlights = async (date) => {
         );
       }
     }
+
     await Promise.all(highlightPromises);
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { highlightsFetched: true },
+    });
   }
 };
 

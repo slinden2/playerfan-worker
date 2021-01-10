@@ -3,13 +3,9 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const { map } = require("lodash");
+const { getPlayersWithoutScratches } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
-
-const getPlayersWithoutScratches = (skaters, scratches) => {
-  return skaters.filter((playerId) => !scratches.includes(playerId));
-};
 
 const getPlayers = async (teams) => {
   const skatersHome = getPlayersWithoutScratches(

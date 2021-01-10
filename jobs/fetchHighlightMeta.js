@@ -123,6 +123,10 @@ const fetchHighlightMeta = async (date) => {
       );
     }
     await Promise.all(metaPromiseArr);
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { highlightMetaFetched: true },
+    });
   }
 };
 
