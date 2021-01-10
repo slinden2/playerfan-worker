@@ -19,6 +19,7 @@
     "fetchTeams": "node ./jobs/fetchTeams.js",
     "fetchGames": "node ./jobs/fetchGames.js",
     "fetchBoxscores": "node ./jobs/fetchBoxscores.js",
+    "fetchLinescores": "node ./jobs/fetchLinescores.js",
     "fetchHighlights": "node ./jobs/fetchHighlights.js",
     "fetchHighlightMeta": "node ./jobs/fetchHighlightMeta.js",
     "fetchPlaybacks": "node ./jobs/fetchPlaybacks.js"

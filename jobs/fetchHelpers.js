@@ -1,3 +1,5 @@
+const axios = require("axios");
+
 const generateSiteLink = (name) => {
   return name
     .replace(/[^a-zA-Z0-9\s]/g, "")
@@ -40,6 +42,36 @@ const liveFeedUrl = (gamePk) =>
 const playerUrl = (playerId) =>
   `https://statsapi.web.nhl.com/api/v1/people/${playerId}`;
 
+const getPlayersWithoutScratches = (skaters, scratches) => {
+  return skaters.filter((playerId) => !scratches.includes(playerId));
+};
+
+const getApiData = async (dataSet, gamePk) => {
+  const prop =
+    dataSet === "content"
+      ? "__CONTENT__"
+      : dataSet === "livefeed"
+      ? "__LIVE_FEED__"
+      : undefined;
+  if (!prop) {
+    throw new Error(
+      `Valid dataSet values: 'content', 'livefeed'. Provided: ${dataSet}`
+    );
+  }
+
+  if (globalThis[prop] && globalThis[prop][gamePk]) {
+    return globalThis[prop][gamePk];
+  } else {
+    const func =
+      prop === "__CONTENT__"
+        ? contentUrl
+        : prop === "__LIVE_FEED__"
+        ? liveFeedUrl
+        : undefined;
+    return await axios.get(func(gamePk));
+  }
+};
+
 module.exports = {
   generateSiteLink,
   isValidDate,
@@ -50,4 +82,6 @@ module.exports = {
   contentUrl,
   liveFeedUrl,
   playerUrl,
+  getApiData,
+  getPlayersWithoutScratches,
 };
