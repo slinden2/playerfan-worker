@@ -18,9 +18,10 @@
     "fetchDivisions": "node ./jobs/fetchDivisions.js",
     "fetchTeams": "node ./jobs/fetchTeams.js",
     "fetchGames": "node ./jobs/fetchGames.js",
+    "fetchBoxscores": "node ./jobs/fetchBoxscores.js",
     "fetchHighlights": "node ./jobs/fetchHighlights.js",
     "fetchHighlightMeta": "node ./jobs/fetchHighlightMeta.js",
-    "fetchBoxscores": "node ./jobs/fetchBoxscores.js"
+    "fetchPlaybacks": "node ./jobs/fetchPlaybacks.js"
   },
   "repository": {
     "type": "git",
