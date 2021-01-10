@@ -23,7 +23,7 @@ if (inputDate) {
   isValidDate(inputDate);
 }
 
-const createBoxscoreObject = (game, player, stats, isGoalie) => {
+const createBoxscoreObject = (game, player, team, stats, isGoalie) => {
   isGoalie ? (stats = stats.goalieStats) : (stats = stats.skaterStats);
 
   const baseScore = {
@@ -33,6 +33,9 @@ const createBoxscoreObject = (game, player, stats, isGoalie) => {
     goals: stats.goals,
     player: {
       connect: { id: player.id },
+    },
+    team: {
+      connect: { id: team.id },
     },
     game: {
       connect: { id: game.id },
@@ -81,6 +84,17 @@ const createBoxscoreObject = (game, player, stats, isGoalie) => {
       powerPlayTimeOnIce: convertMMSStoSec(stats.powerPlayTimeOnIce),
       shortHandedTimeOnIce: convertMMSStoSec(stats.shortHandedTimeOnIce),
     };
+  }
+};
+
+const createBoxscorePromise = (fetchedPlayers, game, player, team) => {
+  let { stats } = fetchedPlayers[`ID${player.playerIdApi}`];
+  const isGoalie = player.primaryPosition === "G";
+  const scoreObject = createBoxscoreObject(game, player, team, stats, isGoalie);
+  if (isGoalie) {
+    return prisma.goalieBoxscore.create({ data: scoreObject });
+  } else {
+    return prisma.skaterBoxscore.create({ data: scoreObject });
   }
 };
 
@@ -175,15 +189,16 @@ const fetchBoxscores = async (date) => {
     const fetchedPlayers = { ...teams.home.players, ...teams.away.players };
 
     const promiseArray = [];
-    for (const player of [...playersInDbAway, ...playersInDbHome]) {
-      let { stats } = fetchedPlayers[`ID${player.playerIdApi}`];
-      const isGoalie = player.primaryPosition === "G";
-      const scoreObject = createBoxscoreObject(game, player, stats, isGoalie);
-      if (isGoalie) {
-        promiseArray.push(prisma.goalieBoxscore.create({ data: scoreObject }));
-      } else {
-        promiseArray.push(prisma.skaterBoxscore.create({ data: scoreObject }));
-      }
+    for (const player of playersInDbAway) {
+      promiseArray.push(
+        createBoxscorePromise(fetchedPlayers, game, player, awayTeam)
+      );
+    }
+
+    for (const player of playersInDbHome) {
+      promiseArray.push(
+        createBoxscorePromise(fetchedPlayers, game, player, homeTeam)
+      );
     }
 
     await Promise.all(promiseArray);
