@@ -9,17 +9,6 @@ const { validateDate, gamesUrl } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
-// validate date string
-if (process.argv[2]) {
-  validateDate(process.argv[2]);
-}
-
-const timeYesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-
-// construct current date in YYYY-MM-DD format
-const UTC_DATE = timeYesterday.toISOString().split("T")[0];
-const date = process.argv[2] || UTC_DATE;
-
 const fetchGames = async (date) => {
   const url = gamesUrl(date);
   console.log(`fetchGames - url: ${url}`);
@@ -93,6 +82,17 @@ const fetchGames = async (date) => {
 };
 
 if (require.main === module) {
+  // validate date string
+  if (process.argv[2]) {
+    validateDate(process.argv[2]);
+  }
+
+  const timeYesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+
+  // construct current date in YYYY-MM-DD format
+  const UTC_DATE = timeYesterday.toISOString().split("T")[0];
+  const date = process.argv[2] || UTC_DATE;
+
   fetchGames(date)
     .catch((e) => {
       console.error(e);

@@ -147,9 +147,8 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
   }
 };
 
-const inputArgs = validateInputArgs(process.argv);
-
 if (require.main === module) {
+  const inputArgs = validateInputArgs(process.argv);
   fetchHighlights(inputArgs)
     .catch((e) => {
       console.error(e);

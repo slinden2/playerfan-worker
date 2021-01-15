@@ -217,9 +217,8 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
   }
 };
 
-const inputArgs = validateInputArgs(process.argv);
-
 if (require.main === module) {
+  const inputArgs = validateInputArgs(process.argv);
   fetchBoxscores(inputArgs)
     .catch((e) => {
       console.error(e);
