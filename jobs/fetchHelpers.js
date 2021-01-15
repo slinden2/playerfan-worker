@@ -8,9 +8,15 @@ const generateSiteLink = (name) => {
     .toLowerCase();
 };
 
-const isValidDate = (date) => {
+const validateDate = (date) => {
   if (!/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/.test(date)) {
     throw new Error("Invalid date argument");
+  }
+};
+
+const validateGamePk = (gamePk) => {
+  if (!/^20[1-9][0-9]0\d{5}$/.test(gamePk)) {
+    throw new Error("Invalid gamePk");
   }
 };
 
@@ -72,9 +78,34 @@ const getApiData = async (dataSet, gamePk) => {
   }
 };
 
+const fetchModes = ["DATE", "GAMEPK", "FLAG"];
+const validateFetchMode = (mode) => {
+  if (!fetchModes.includes(mode)) {
+    throw new Error(
+      `Valid fetch modes: 'DATE', 'GAMEPK', 'FLAG'. Provided: ${mode}`
+    );
+  }
+};
+
+const validateInputArgs = (arr) => {
+  validateFetchMode(arr[2]);
+  const fetchMode = arr[2];
+
+  if (fetchMode === "DATE") {
+    validateDate(arr[3]);
+  }
+
+  if (fetchMode === "GAMEPK") {
+    validateGamePk(arr[3]);
+  }
+
+  return { fetchMode, inputArg: arr[3] };
+};
+
 module.exports = {
   generateSiteLink,
-  isValidDate,
+  validateDate,
+  validateGamePk,
   convertFtToCm,
   convertLbsToKg,
   convertMMSStoSec,
@@ -84,4 +115,6 @@ module.exports = {
   playerUrl,
   getApiData,
   getPlayersWithoutScratches,
+  validateFetchMode,
+  validateInputArgs,
 };
