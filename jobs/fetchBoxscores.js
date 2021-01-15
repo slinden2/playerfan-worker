@@ -3,7 +3,6 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
 
 const getGames = require("./getGames");
 const {
@@ -96,7 +95,7 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,
     inputArg,
-    flag: "boxscoresFetched",
+    flag: { boxscoresFetched: false },
   });
 
   const gamePks = games.map((g) => g.gamePk);
@@ -204,11 +203,11 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
       console.log("fetchBoxscores - Saving boxscores");
       await Promise.all(promiseArray);
 
-      console.log(`fetchBoxscores - Game ${game.gamePk} done`);
       await prisma.game.update({
         where: { id: game.id },
         data: { boxscoresFetched: true },
       });
+      console.log(`fetchBoxscores - Game ${game.gamePk} done`);
     } catch (err) {
       console.error(
         `fetchBoxscores - Error while working on ${game.gamePk}.\n${err.stack}`
