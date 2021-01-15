@@ -47,6 +47,7 @@ const createPlayers = async (newPlayers, gamePk, teamId) => {
 
   let playerArray = [];
   for (const id of newPlayers) {
+    console.log(`Fetching player from ${playerUrl(id)}`);
     const { data } = await axios.get(playerUrl(id));
     if (data) {
       playerArray = [...playerArray, data.people[0]];
