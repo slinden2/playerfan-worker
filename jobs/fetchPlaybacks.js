@@ -3,19 +3,16 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
 
-const { isValidDate, contentUrl } = require("./fetchHelpers");
+const {
+  contentUrl,
+  logBatch,
+  getApiData,
+  validateInputArgs,
+} = require("./fetchHelpers");
 const getGames = require("./getGames");
 
 const prisma = new PrismaClient();
-
-const inputDate = process.argv[2];
-
-// validate date string
-if (inputDate) {
-  isValidDate(inputDate);
-}
 
 const createPlayback = (highlight, playbacks) => {
   const playbackPromises = [];
@@ -53,64 +50,84 @@ const createPlayback = (highlight, playbacks) => {
   return playbackPromises;
 };
 
-const fetchPlaybacks = async (date) => {
-  const games = await getGames(date);
+const fetchPlaybacks = async ({ fetchMode, inputArg }) => {
+  const games = await getGames({
+    fetchMode,
+    inputArg,
+    flags: { highlightsFetched: true, playbacksFetched: false },
+  });
+
+  logBatch("fetchPlaybacks", games);
 
   for (const game of games) {
-    const {
-      data: { media: milestoneData },
-    } =
-      (globalThis.__CONTENT__ && globalThis.__CONTENT__[game.gamePk]) ||
-      (await axios.get(contentUrl(game.gamePk)));
+    try {
+      console.log(`fetchPlaybacks - url: ${contentUrl(game.gamePk)}`);
+      const {
+        data: { media: milestoneData },
+      } = await getApiData("content", game.gamePk);
 
-    const highlightsInDb = await prisma.highlight.findMany({
-      where: { gamePk: game.gamePk },
-    });
+      const highlightsInDb = await prisma.highlight.findMany({
+        where: { gamePk: game.gamePk },
+      });
 
-    const playbackPromises = [];
-    for (highlight of highlightsInDb) {
-      let playbacksInApi;
-      switch (highlight.type) {
-        case "CONDENSED":
-          const condensedGame = milestoneData.epg.find(
-            (category) => category.title === "Extended Highlights"
-          );
-          playbacksInApi = condensedGame.items[0].playbacks;
-          break;
-        case "RECAP":
-          const gameRecap = milestoneData.epg.find(
-            (category) => category.title === "Recap"
-          );
-          playbacksInApi = gameRecap.items[0].playbacks;
-          break;
-        case "MILESTONE":
-          const milestone = milestoneData.milestones.items.find(
-            (milestone) =>
-              milestone.highlight.id === highlight.videoIdApi.toString()
-          );
-          playbacksInApi = milestone.highlight.playbacks;
-          break;
-        default:
-          throw new Error(
-            `Attempted to create playbacks for highlightType ${highlight.type}, which is not handled.`
-          );
+      const playbackPromises = [];
+      for (highlight of highlightsInDb) {
+        console.log(
+          `fetchPlaybacks - Creating playbacks for highlight ${highlight.videoIdApi}`
+        );
+        let playbacksInApi;
+        switch (highlight.type) {
+          case "CONDENSED":
+            const condensedGame = milestoneData.epg.find(
+              (category) => category.title === "Extended Highlights"
+            );
+            playbacksInApi = condensedGame.items[0].playbacks;
+            break;
+          case "RECAP":
+            const gameRecap = milestoneData.epg.find(
+              (category) => category.title === "Recap"
+            );
+            playbacksInApi = gameRecap.items[0].playbacks;
+            break;
+          case "MILESTONE":
+            const milestone = milestoneData.milestones.items.find(
+              (milestone) =>
+                milestone.highlight.id === highlight.videoIdApi.toString()
+            );
+            playbacksInApi = milestone.highlight.playbacks;
+            break;
+          default:
+            throw new Error(
+              `Attempted to create playbacks for highlightType ${highlight.type}, which is not handled.`
+            );
+        }
+        const promises = createPlayback(highlight, playbacksInApi);
+        playbackPromises.push(...promises);
       }
-      const promises = createPlayback(highlight, playbacksInApi);
-      playbackPromises.push(...promises);
+      console.log("fetchPlaybacks - Saving playbacks");
+      await Promise.all(playbackPromises);
+      await prisma.game.update({
+        where: { id: game.id },
+        data: { playbacksFetched: true },
+      });
+      console.log(`fetchPlaybacks - Game ${game.gamePk} done`);
+    } catch (err) {
+      console.error(
+        `fetchPlaybacks - Error while working on ${game.gamePk}.\n${err.stack}`
+      );
+      continue;
     }
-    await Promise.all(playbackPromises);
-    await prisma.game.update({
-      where: { id: game.id },
-      data: { playbacksFetched: true },
-    });
   }
 };
 
-fetchPlaybacks(inputDate)
-  .catch((e) => {
-    console.error(e);
-  })
-  .finally(() => {
-    prisma.$disconnect();
-    process.exit(0);
-  });
+if (require.main === module) {
+  const inputArgs = validateInputArgs(process.argv);
+  fetchPlaybacks(inputArgs)
+    .catch((e) => {
+      console.error(e);
+    })
+    .finally(() => {
+      prisma.$disconnect();
+      process.exit(0);
+    });
+}
