@@ -3,13 +3,14 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
 const _ = require("lodash");
 
 const {
   convertMMSStoSec,
   contentUrl,
   validateInputArgs,
+  getApiData,
+  logBatch,
 } = require("./fetchHelpers");
 const getGames = require("./getGames");
 
@@ -51,17 +52,14 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
     flags: { boxscoresFetched: true, highlightsFetched: false },
   });
 
-  const gamePks = games.map((g) => g.gamePk);
-  if (gamePks.length) {
-    console.log(`fetchHighlights - Starting to fetch batch: ${gamePks}`);
-  }
+  logBatch("fetchHighlights", games);
 
   for (const game of games) {
     try {
       `fetchHighlights - url: ${contentUrl(game.gamePk)}`;
       const {
         data: { media: milestoneData },
-      } = await axios.get(contentUrl(game.gamePk));
+      } = await getApiData("content", game.gamePk);
 
       const condensedGame = milestoneData.epg.find(
         (category) => category.title === "Extended Highlights"

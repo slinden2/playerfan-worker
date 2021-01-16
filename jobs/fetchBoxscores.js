@@ -10,6 +10,7 @@ const {
   convertMMSStoSec,
   validateInputArgs,
   getApiData,
+  logBatch,
 } = require("./fetchHelpers");
 const createPlayers = require("./createPlayers");
 const getPlayers = require("./getPlayers");
@@ -95,11 +96,10 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,
     inputArg,
-    flag: { boxscoresFetched: false },
+    flags: { boxscoresFetched: false },
   });
 
-  const gamePks = games.map((g) => g.gamePk);
-  console.log(`fetchBoxscores - Starting to fetch batch: ${gamePks}`);
+  logBatch("fetchBoxscores", games);
 
   for (const game of games) {
     try {
