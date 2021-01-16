@@ -3,23 +3,17 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
 
 const getGames = require("./getGames");
 const {
-  isValidDate,
   getApiData,
   getPlayersWithoutScratches,
+  validateInputArgs,
+  logBatch,
+  liveFeedUrl,
 } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
-
-const inputDate = process.argv[2];
-
-// validate date string
-if (inputDate) {
-  isValidDate(inputDate);
-}
 
 const getStat = (boxscore, team, stat) => {
   const skaters = getPlayersWithoutScratches(
@@ -112,37 +106,56 @@ const getLinescoreObject = (game, linescore, boxscore, isHomeGame) => {
   return teamData;
 };
 
-const fetchLinescores = async (date) => {
-  const games = await getGames(date);
+const fetchLinescores = async ({ fetchMode, inputArg }) => {
+  const games = await getGames({
+    fetchMode,
+    inputArg,
+    flags: { linescoresFetched: false },
+  });
+
+  logBatch("fetchLinescores", games);
 
   for (const game of games) {
-    const {
-      data: {
-        liveData: { boxscore, linescore },
-      },
-    } = await getApiData("livefeed", game.gamePk);
+    try {
+      console.log(`fetchLinescores - url: ${liveFeedUrl(game.gamePk)}`);
+      const {
+        data: {
+          liveData: { boxscore, linescore },
+        },
+      } = await getApiData("livefeed", game.gamePk);
 
-    const awayData = getLinescoreObject(game, linescore, boxscore, false);
-    const homeData = getLinescoreObject(game, linescore, boxscore, true);
+      const awayData = getLinescoreObject(game, linescore, boxscore, false);
+      const homeData = getLinescoreObject(game, linescore, boxscore, true);
 
-    const linescorePromises = [
-      prisma.linescore.create({ data: awayData }),
-      prisma.linescore.create({ data: homeData }),
-    ];
+      const linescorePromises = [
+        prisma.linescore.create({ data: awayData }),
+        prisma.linescore.create({ data: homeData }),
+      ];
 
-    await Promise.all(linescorePromises);
-    await prisma.game.update({
-      where: { id: game.id },
-      data: { linescoresFetched: true },
-    });
+      console.log("fetchLinescores - Saving linescores");
+      await Promise.all(linescorePromises);
+      await prisma.game.update({
+        where: { id: game.id },
+        data: { linescoresFetched: true },
+      });
+      console.log(`fetchLinescores - Game ${game.gamePk} done`);
+    } catch (err) {
+      console.error(
+        `fetchLinescores - Error while working on ${game.gamePk}.\n${err.stack}`
+      );
+      continue;
+    }
   }
 };
 
-fetchLinescores(inputDate)
-  .catch((e) => {
-    console.error(e);
-  })
-  .finally(() => {
-    prisma.$disconnect();
-    process.exit(0);
-  });
+if (require.main === module) {
+  const inputArgs = validateInputArgs(process.argv);
+  fetchLinescores(inputArgs)
+    .catch((e) => {
+      console.error(e);
+    })
+    .finally(() => {
+      prisma.$disconnect();
+      process.exit(0);
+    });
+}
