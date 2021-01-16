@@ -3,24 +3,17 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
-const _ = require("lodash");
 
 const {
-  isValidDate,
-  liveFeedUrl,
   convertMMSStoSec,
+  logBatch,
+  validateInputArgs,
+  getApiData,
+  liveFeedUrl,
 } = require("./fetchHelpers");
 const getGames = require("./getGames");
 
 const prisma = new PrismaClient();
-
-const inputDate = process.argv[2];
-
-// validate date string
-if (inputDate) {
-  isValidDate(inputDate);
-}
 
 const createMetaDataObject = async (game, goal) => {
   let scorer;
@@ -90,51 +83,74 @@ const createMetaDataObject = async (game, goal) => {
     dateTime: new Date(goal.about.dateTime).toISOString(),
     coordX: goal.coordinates.x,
     coordY: goal.coordinates.y,
+    hasVideo: !!highlight,
     ...(scorer && { scorer: { connect: { id: scorer.id } } }),
     ...(assist1 && { assist1: { connect: { id: assist1.id } } }),
     ...(assist2 && { assist2: { connect: { id: assist2.id } } }),
     ...(goalie && { goalie: { connect: { id: goalie.id } } }),
     team: { connect: { id: team.id } },
-    highlight: { connect: { id: highlight.id } },
+    ...(highlight && { highlight: { connect: { id: highlight.id } } }),
   };
 };
 
-const fetchHighlightMeta = async (date) => {
-  const latestGames = await getGames(date);
-  for (const game of latestGames) {
-    const liveFeedData = await axios.get(liveFeedUrl(game.gamePk));
-    const {
-      data: {
-        liveData: {
-          plays: { allPlays },
+const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
+  const games = await getGames({
+    fetchMode,
+    inputArg,
+    flags: { highlightsFetched: true, highlightMetaFetched: false },
+  });
+
+  logBatch("fetchHighlightMeta", games);
+
+  for (const game of games) {
+    console.log(`fetchHighlightMeta - url: ${liveFeedUrl(game.gamePk)}`);
+    try {
+      const {
+        data: {
+          liveData: {
+            plays: { allPlays },
+          },
         },
-      },
-    } = liveFeedData;
+      } = await getApiData("livefeed", game.gamePk);
 
-    const goals = allPlays.filter(
-      ({ result }) => result.eventTypeId === "GOAL"
-    );
-
-    const metaPromiseArr = [];
-    for (const goal of goals) {
-      const newMetaDataObject = await createMetaDataObject(game, goal);
-      metaPromiseArr.push(
-        prisma.highlightMeta.create({ data: newMetaDataObject })
+      const goals = allPlays.filter(
+        ({ result }) => result.eventTypeId === "GOAL"
       );
+
+      const metaPromiseArr = [];
+      for (const goal of goals) {
+        console.log(
+          `fetchHighlightMeta - Creating goal eventIdApi: ${goal.about.eventId}`
+        );
+        const newMetaDataObject = await createMetaDataObject(game, goal);
+        metaPromiseArr.push(
+          prisma.highlightMeta.create({ data: newMetaDataObject })
+        );
+      }
+      console.log("fetchHighlightMeta - Saving highlight metas");
+      await Promise.all(metaPromiseArr);
+      await prisma.game.update({
+        where: { id: game.id },
+        data: { highlightMetaFetched: true },
+      });
+      `fetchHighlightMeta - Game ${game.gamePk} done`;
+    } catch (err) {
+      console.error(
+        `fetchHighlighMeta - Error while working on ${game.gamePk}\n${err.stack}`
+      );
+      continue;
     }
-    await Promise.all(metaPromiseArr);
-    await prisma.game.update({
-      where: { id: game.id },
-      data: { highlightMetaFetched: true },
-    });
   }
 };
 
-fetchHighlightMeta(inputDate)
-  .catch((e) => {
-    console.error(e);
-  })
-  .finally(() => {
-    prisma.$disconnect();
-    process.exit(0);
-  });
+if (require.main === module) {
+  const inputArgs = validateInputArgs(process.argv);
+  fetchHighlightMeta(inputArgs)
+    .catch((e) => {
+      console.error(e);
+    })
+    .finally(() => {
+      prisma.$disconnect();
+      process.exit(0);
+    });
+}

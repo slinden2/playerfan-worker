@@ -102,6 +102,13 @@ const validateInputArgs = (arr) => {
   return { fetchMode, inputArg: arr[3] };
 };
 
+const logBatch = (funcName, games) => {
+  const gamePks = games.map((g) => g.gamePk);
+  if (gamePks.length) {
+    console.log(`${funcName} - Starting to fetch batch: ${gamePks}`);
+  }
+};
+
 module.exports = {
   generateSiteLink,
   validateDate,
@@ -117,4 +124,5 @@ module.exports = {
   getPlayersWithoutScratches,
   validateFetchMode,
   validateInputArgs,
+  logBatch,
 };
