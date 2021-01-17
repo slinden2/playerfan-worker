@@ -52,29 +52,12 @@ const getPlayersWithoutScratches = (skaters, scratches) => {
   return skaters.filter((playerId) => !scratches.includes(playerId));
 };
 
-const getApiData = async (dataSet, gamePk) => {
-  const prop =
-    dataSet === "content"
-      ? "__CONTENT__"
-      : dataSet === "livefeed"
-      ? "__LIVE_FEED__"
-      : undefined;
-  if (!prop) {
-    throw new Error(
-      `Valid dataSet values: 'content', 'livefeed'. Provided: ${dataSet}`
-    );
-  }
-
-  if (globalThis[prop] && globalThis[prop][gamePk]) {
-    return globalThis[prop][gamePk];
+const getApiData = async (url) => {
+  if (globalThis.__API__ && globalThis.__API__[url]) {
+    console.log("Data found in globalThis");
+    return globalThis.__API__[url];
   } else {
-    const func =
-      prop === "__CONTENT__"
-        ? contentUrl
-        : prop === "__LIVE_FEED__"
-        ? liveFeedUrl
-        : undefined;
-    return await axios.get(func(gamePk));
+    return await axios.get(url);
   }
 };
 

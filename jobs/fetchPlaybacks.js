@@ -61,10 +61,11 @@ const fetchPlaybacks = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
-      console.log(`fetchPlaybacks - url: ${contentUrl(game.gamePk)}`);
+      const url = contentUrl(game.gamePk);
+      console.log(`fetchPlaybacks - url: ${url}`);
       const {
         data: { media: milestoneData },
-      } = await getApiData("content", game.gamePk);
+      } = await getApiData(url);
 
       const highlightsInDb = await prisma.highlight.findMany({
         where: { gamePk: game.gamePk },
@@ -131,3 +132,5 @@ if (require.main === module) {
       process.exit(0);
     });
 }
+
+module.exports = fetchPlaybacks;

@@ -103,7 +103,8 @@ const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
   logBatch("fetchHighlightMeta", games);
 
   for (const game of games) {
-    console.log(`fetchHighlightMeta - url: ${liveFeedUrl(game.gamePk)}`);
+    const url = liveFeedUrl(game.gamePk);
+    console.log(`fetchHighlightMeta - url: ${url}`);
     try {
       const {
         data: {
@@ -111,7 +112,7 @@ const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
             plays: { allPlays },
           },
         },
-      } = await getApiData("livefeed", game.gamePk);
+      } = await getApiData(url);
 
       const goals = allPlays.filter(
         ({ result }) => result.eventTypeId === "GOAL"
@@ -154,3 +155,5 @@ if (require.main === module) {
       process.exit(0);
     });
 }
+
+module.exports = fetchHighlightMeta;

@@ -103,14 +103,15 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
-      console.log(`fetchBoxscores - url: ${liveFeedUrl(game.gamePk)}`);
+      const url = liveFeedUrl(game.gamePk);
+      console.log(`fetchBoxscores - url: ${url}`);
       const {
         data: {
           liveData: {
             boxscore: { teams },
           },
         },
-      } = await getApiData("livefeed", game.gamePk);
+      } = await getApiData(url);
 
       const players = await getPlayers(teams);
       if (players.notInDb.away.length) {

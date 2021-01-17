@@ -117,12 +117,13 @@ const fetchLinescores = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
-      console.log(`fetchLinescores - url: ${liveFeedUrl(game.gamePk)}`);
+      const url = liveFeedUrl(game.gamePk);
+      console.log(`fetchLinescores - url: ${url}`);
       const {
         data: {
           liveData: { boxscore, linescore },
         },
-      } = await getApiData("livefeed", game.gamePk);
+      } = await getApiData(url);
 
       const awayData = getLinescoreObject(game, linescore, boxscore, false);
       const homeData = getLinescoreObject(game, linescore, boxscore, true);
@@ -159,3 +160,5 @@ if (require.main === module) {
       process.exit(0);
     });
 }
+
+module.exports = fetchLinescores;

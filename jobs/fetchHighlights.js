@@ -56,10 +56,11 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
-      `fetchHighlights - url: ${contentUrl(game.gamePk)}`;
+      const url = contentUrl(game.gamePk);
+      console.log(`fetchHighlights - url: ${url}`);
       const {
         data: { media: milestoneData },
-      } = await getApiData("content", game.gamePk);
+      } = await getApiData(url);
 
       const condensedGame = milestoneData.epg.find(
         (category) => category.title === "Extended Highlights"
@@ -156,3 +157,4 @@ if (require.main === module) {
       process.exit(0);
     });
 }
+module.exports = fetchHighlights;
