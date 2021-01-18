@@ -35,7 +35,10 @@ const createPlayerObject = (player, team) => {
     shootsCatches: player.shootsCatches,
     rosterStatus: player.rosterStatus,
     currentTeam: { connect: { id: team.id } },
-    primaryPosition: player.primaryPosition.code,
+    primaryPosition:
+      player.primaryPosition.code === "N/A"
+        ? "NA"
+        : player.primaryPosition.code,
     active: player.active,
   };
 };
