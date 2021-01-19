@@ -3,9 +3,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const axios = require("axios");
 
-const { validateDate, gamesUrl } = require("./fetchHelpers");
+const { validateDate, gamesUrl, getApiData } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
@@ -16,7 +15,7 @@ const fetchGames = async (date) => {
   try {
     const {
       data: { dates },
-    } = await axios.get(url);
+    } = await getApiData(url);
 
     if (!dates.length) {
       throw new Error(`fetchGames - No games available: ${url}`);
@@ -26,6 +25,10 @@ const fetchGames = async (date) => {
 
     for (const game of games) {
       try {
+        await prisma.game.deleteMany({
+          where: { apiDate: new Date(data).toISOString() },
+        });
+
         console.log(`fetchGames - Creating gamePk ${game.gamePk}`);
         const awayTeam = await prisma.team.findUnique({
           where: {
@@ -82,17 +85,8 @@ const fetchGames = async (date) => {
 };
 
 if (require.main === module) {
-  // validate date string
-  if (process.argv[2]) {
-    validateDate(process.argv[2]);
-  }
-
-  const timeYesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-
-  // construct current date in YYYY-MM-DD format
-  const UTC_DATE = timeYesterday.toISOString().split("T")[0];
-  const date = process.argv[2] || UTC_DATE;
-
+  const date = process.argv[2];
+  validateDate(date);
   fetchGames(date)
     .catch((e) => {
       console.error(e);

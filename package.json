@@ -22,7 +22,8 @@
     "fetchLinescores": "node ./jobs/fetchLinescores.js",
     "fetchHighlights": "node ./jobs/fetchHighlights.js",
     "fetchHighlightMeta": "node ./jobs/fetchHighlightMeta.js",
-    "fetchPlaybacks": "node ./jobs/fetchPlaybacks.js"
+    "fetchPlaybacks": "node ./jobs/fetchPlaybacks.js",
+    "fetchDate": "node ./jobs/fetchDate.js"
   },
   "repository": {
     "type": "git",

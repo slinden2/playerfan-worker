@@ -18,6 +18,11 @@ const createPlayback = (highlight, playbacks) => {
   const playbackPromises = [];
 
   for (const playback of playbacks) {
+    // Discard empty urls
+    if (!playback.url) {
+      continue;
+    }
+
     playbackPromises.push(
       prisma.playback.create({
         data: {
@@ -61,6 +66,13 @@ const fetchPlaybacks = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
+      if (fetchMode === "GAMEPK") {
+        // Delete partially fetched playbacks
+        await prisma.playback.deleteMany({
+          where: { highlight: { gamePk: game.gamePk } },
+        });
+      }
+
       const url = contentUrl(game.gamePk);
       console.log(`fetchPlaybacks - url: ${url}`);
       const {
@@ -73,9 +85,11 @@ const fetchPlaybacks = async ({ fetchMode, inputArg }) => {
 
       const playbackPromises = [];
       for (highlight of highlightsInDb) {
-        console.log(
-          `fetchPlaybacks - Creating playbacks for highlight ${highlight.videoIdApi}`
-        );
+        if (fetchMode === "GAMEPK") {
+          console.log(
+            `fetchPlaybacks - Creating playbacks for highlight ${highlight.videoIdApi}`
+          );
+        }
         let playbacksInApi;
         switch (highlight.type) {
           case "CONDENSED":

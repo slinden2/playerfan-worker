@@ -103,6 +103,15 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
+      if (fetchMode === "GAMEPK") {
+        await prisma.skaterBoxscore.deleteMany({
+          where: { gamePk: game.gamePk },
+        });
+        await prisma.goalieBoxscore.deleteMany({
+          where: { gamePk: game.gamePk },
+        });
+      }
+
       const url = liveFeedUrl(game.gamePk);
       console.log(`fetchBoxscores - url: ${url}`);
       const {

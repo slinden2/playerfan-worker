@@ -103,9 +103,17 @@ const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
   logBatch("fetchHighlightMeta", games);
 
   for (const game of games) {
-    const url = liveFeedUrl(game.gamePk);
-    console.log(`fetchHighlightMeta - url: ${url}`);
     try {
+      if (fetchMode === "GAMEPK") {
+        await prisma.highlightMeta.deleteMany({
+          where: {
+            highlight: { gamePk: game.gamePk },
+          },
+        });
+      }
+
+      const url = liveFeedUrl(game.gamePk);
+      console.log(`fetchHighlightMeta - url: ${url}`);
       const {
         data: {
           liveData: {
@@ -120,9 +128,11 @@ const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
 
       const metaPromiseArr = [];
       for (const goal of goals) {
-        console.log(
-          `fetchHighlightMeta - Creating goal eventIdApi: ${goal.about.eventId}`
-        );
+        if (fetchMode === "GAMEPK") {
+          console.log(
+            `fetchHighlightMeta - Creating goal eventIdApi: ${goal.about.eventId}`
+          );
+        }
         const newMetaDataObject = await createMetaDataObject(game, goal);
         metaPromiseArr.push(
           prisma.highlightMeta.create({ data: newMetaDataObject })

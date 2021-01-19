@@ -56,6 +56,10 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
+      if (fetchMode === "GAMEPK") {
+        await prisma.highlight.deleteMany({ where: { gamePk: game.gamePk } });
+      }
+
       const url = contentUrl(game.gamePk);
       console.log(`fetchHighlights - url: ${url}`);
       const {
@@ -69,8 +73,20 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
         (category) => category.title === "Recap"
       );
 
-      const hasCondensedVideo = !!condensedGame.items.length;
-      const hasRecapVideo = !!gameRecap.items.length;
+      let hasCondensedVideo = !!condensedGame.items.length;
+      let hasRecapVideo = !!gameRecap.items.length;
+
+      // Check is condensed and recap are actually the same highlight (gamePk)
+      // Example: https://statsapi.web.nhl.com/api/v1/game/2019020799/content
+      if (hasCondensedVideo && hasRecapVideo) {
+        if (condensedGame.items[0].id === gameRecap.items[0].id) {
+          if (gameRecap.items[0].title.startsWith("Recap:")) {
+            hasCondensedVideo = false;
+          } else {
+            hasRecapVideo = false;
+          }
+        }
+      }
 
       const highlightPromises = [];
       if (hasCondensedVideo) {
@@ -101,9 +117,11 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
       const milestones = _.uniqBy(rawMilestones, "highlight.id");
 
       for (const milestone of milestones) {
-        console.log(
-          `fetchHighlights - Creating videoIdApi: ${milestone.highlight.id}`
-        );
+        if (fetchMode === "GAMEPK") {
+          console.log(
+            `fetchHighlights - Creating videoIdApi: ${milestone.highlight.id}`
+          );
+        }
         const team =
           game.homeTeam.teamIdApi === parseInt(milestone.teamId)
             ? game.homeTeam
