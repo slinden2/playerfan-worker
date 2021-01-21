@@ -1,0 +1,1 @@
+SELECT * FROM "Game" WHERE "boxscoresFetched" = FALSE OR "linescoresFetched" = FALSE OR "highlightsFetched" = FALSE OR "highlightMetaFetched" = FALSE OR "playbacksFetched" = FALSE;
