@@ -1,0 +1,34 @@
+[
+  {
+    "divisionId": 26,
+    "name": "Discover Central",
+    "link": "/api/v1/divisions/26",
+    "shortName": "CEN",
+    "abbreviation": "C",
+    "active": true
+  },
+  {
+    "divisionId": 27,
+    "name": "Honda West",
+    "link": "/api/v1/divisions/27",
+    "shortName": "WST",
+    "abbreviation": "W",
+    "active": true
+  },
+  {
+    "divisionId": 25,
+    "name": "MassMutual East",
+    "link": "/api/v1/divisions/25",
+    "shortName": "EST",
+    "abbreviation": "E",
+    "active": true
+  },
+  {
+    "divisionId": 28,
+    "name": "Scotia North",
+    "link": "/api/v1/divisions/28",
+    "shortName": "NTH",
+    "abbreviation": "N",
+    "active": true
+  }
+]
