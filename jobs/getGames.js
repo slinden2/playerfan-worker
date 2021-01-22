@@ -14,19 +14,19 @@ const getGames = async ({ fetchMode, inputArg, flags }) => {
     case "DATE":
       validateDate(inputArg);
       games = await prisma.game.findMany({
-        where: { apiDate: new Date(inputArg).toISOString() },
+        where: { statusCode: 7, apiDate: new Date(inputArg).toISOString() },
         include: { homeTeam: true, awayTeam: true },
       });
       break;
     case "GAMEPK":
       games = await prisma.game.findMany({
-        where: { gamePk: parseInt(inputArg) },
+        where: { statusCode: 7, gamePk: parseInt(inputArg) },
         include: { homeTeam: true, awayTeam: true },
       });
       break;
     case "FLAG":
       games = await prisma.game.findMany({
-        where: flags,
+        where: { statusCode: 7, ...flags },
         include: { homeTeam: true, awayTeam: true },
       });
       break;

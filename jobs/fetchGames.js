@@ -13,6 +13,10 @@ const fetchGames = async (date) => {
   console.log(`fetchGames - url: ${url}`);
 
   try {
+    await prisma.game.deleteMany({
+      where: { apiDate: new Date(date).toISOString() },
+    });
+
     const {
       data: { dates },
     } = await getApiData(url);
@@ -25,9 +29,31 @@ const fetchGames = async (date) => {
 
     for (const game of games) {
       try {
-        await prisma.game.deleteMany({
-          where: { apiDate: new Date(data).toISOString() },
+        const existingGame = await prisma.game.findUnique({
+          where: { gamePk: game.gamePk },
         });
+
+        // If there is an existing game, it means that it has been saved in the DB
+        // but it was postponed (statusCode was not 7). Only games with
+        // statusCode 7 are processed further.
+        // When the postponed game is found on a later date, it will be updated
+        // with new score, statusCode and apiDate. Then the other fetch scripts
+        // pick it up and finalize the fetch.
+        if (existingGame) {
+          console.log(`fetchGames - Found gamePk ${game.gamePk} already in DB`);
+          await prisma.game.update({
+            where: { id: existingGame.id },
+            data: {
+              statusCode: Number(game.status.statusCode),
+              awayScore: game.teams.away.score,
+              homeScore: game.teams.home.score,
+              apiDate,
+              gameDate: new Date(game.gameDate).toISOString(),
+            },
+          });
+          console.log(`fetchGames - Game updated: ${game.gamePk}`);
+          continue;
+        }
 
         console.log(`fetchGames - Creating gamePk ${game.gamePk}`);
         const awayTeam = await prisma.team.findUnique({
@@ -54,6 +80,7 @@ const fetchGames = async (date) => {
 
         const newGame = {
           gamePk: game.gamePk,
+          statusCode: Number(game.status.statusCode),
           liveLink: game.link,
           contentLink: game.content.link,
           gameDate: new Date(game.gameDate).toISOString(),
