@@ -16,7 +16,7 @@ const prisma = new PrismaClient();
 
 const conferenceDivMap = {
   20192020: { ATL: 6, CEN: 5, Metro: 6, PAC: 5 },
-  20202021: { CEN: 6, WST: 5, EST: 6, NTH: 5 },
+  // 20202021: { CEN: 6, WST: 5, EST: 6, NTH: 5 },
 };
 
 const divisions = {
@@ -26,44 +26,96 @@ const divisions = {
 
 const fetchDivisions = async () => {
   try {
-    for (const division of divisions[process.env.SEASON]) {
-      const divisionInDb = await prisma.division.findUnique({
-        where: {
-          season_divisionIdApi: {
-            divisionIdApi: division.divisionId,
-            season: process.env.SEASON,
-          },
-        },
-      });
-      if (divisionInDb) continue;
+    console.log(
+      `fetchDivisions - Starting to fetch division for season ${process.env.SEASON}`
+    );
 
-      const conferenceIdApi =
-        conferenceDivMap[process.env.SEASON][division.shortName];
+    // Get all existing divisions
+    const existingDivisions = await prisma.division.findMany();
 
-      const newDivision = {
-        season: process.env.SEASON,
+    // Divide the seasons divs into already existing (in db) and completely new divs
+    const [existingDivs, divsToCreate] = divisions[process.env.SEASON].reduce(
+      (acc, cur) => {
+        const divInDb = existingDivisions.find(
+          (div) => div.divisionIdApi === cur.divisionId
+        );
+        if (divInDb) {
+          acc[0].push(cur);
+        } else {
+          acc[1].push(cur);
+        }
+
+        return acc;
+      },
+      [[], []]
+    );
+
+    // Create new divisions
+    for (const division of divsToCreate) {
+      console.log(`fetchDivisions - Creating new division "${division.name}"`);
+
+      const divisionObject = {
         divisionIdApi: division.divisionId,
         link: division.link,
         name: division.name,
         shortName: division.shortName,
         abbreviation: division.abbreviation,
-        conference: {
-          connect: {
-            season_conferenceIdApi: {
-              conferenceIdApi,
-              season: process.env.SEASON,
-            },
-          },
-        },
-        active: division.active,
+        activeSeasons: { create: { season: process.env.SEASON } },
       };
+
       await prisma.division.create({
-        data: newDivision,
+        data: divisionObject,
       });
     }
-  } catch ({ name, message }) {
-    console.error("fetch-divisions.fetchDivisions");
-    console.error(`${name}: ${message}`);
+
+    // Update existing divisions with a new activeSeason
+    for (const division of existingDivs) {
+      console.log(`fetchDivisions - Updating division "${division.name}"`);
+      await prisma.division.update({
+        where: { divisionIdApi: division.divisionId },
+        data: { activeSeasons: { create: { season: process.env.SEASON } } },
+      });
+    }
+
+    // Get all active divisions
+    const activeDivisions = await prisma.division.findMany({
+      where: { activeSeasons: { some: { season: process.env.SEASON } } },
+    });
+
+    console.log(`fetchDivisions - Adding conference references`);
+    // Add a conference reference for the season for all active divisions if they need one
+    for (const division of activeDivisions) {
+      const confId =
+        conferenceDivMap[process.env.SEASON]?.[division?.shortName];
+      if (!confId) {
+        console.log(
+          `fetchDivisions - Division "${division.name}" has no conference refence`
+        );
+        continue;
+      }
+
+      const conference = await prisma.conference.findUnique({
+        where: {
+          conferenceIdApi:
+            conferenceDivMap[process.env.SEASON]?.[division?.shortName],
+        },
+        select: { id: true, name: true },
+      });
+
+      console.log(
+        `fetchDivisions - Adding a relation between division "${division.name}" and "${conference.name}".`
+      );
+      await prisma.divisionConference.create({
+        data: {
+          season: process.env.SEASON,
+          conference: { connect: { id: conference.id } },
+          division: { connect: { id: division.id } },
+        },
+      });
+    }
+    console.log(`fetchDivisions - Done`);
+  } catch (err) {
+    console.error("fetchDivisions", err.stack);
   }
 };
 
