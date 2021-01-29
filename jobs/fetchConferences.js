@@ -14,23 +14,28 @@ const fetchConferences = async () => {
     const response = await axios.get(conferenceUrl);
     for (const conference of response.data.conferences) {
       const conferenceInDb = await prisma.conference.findUnique({
-        where: {
-          season_conferenceIdApi: {
-            conferenceIdApi: conference.id,
-            season: process.env.SEASON,
-          },
-        },
+        where: { conferenceIdApi: conference.id },
       });
-      if (conferenceInDb) continue;
+
+      if (conferenceInDb) {
+        await prisma.conference.update({
+          where: { id: conferenceInDb.id },
+          data: { activeSeasons: { create: { season: process.env.SEASON } } },
+        });
+        continue;
+      }
 
       const newConference = {
-        season: process.env.SEASON,
         conferenceIdApi: conference.id,
         name: conference.name,
         link: conference.link,
         abbreviation: conference.abbreviation,
         shortName: conference.shortName,
-        active: conference.active,
+        activeSeasons: {
+          create: {
+            season: process.env.SEASON,
+          },
+        },
       };
 
       await prisma.conference.create({
