@@ -58,20 +58,14 @@ const fetchGames = async (date) => {
         console.log(`fetchGames - Creating gamePk ${game.gamePk}`);
         const awayTeam = await prisma.team.findUnique({
           where: {
-            season_teamIdApi: {
-              season: process.env.SEASON,
-              teamIdApi: game.teams.away.team.id,
-            },
+            teamIdApi: game.teams.away.team.id,
           },
           select: { id: true, teamIdApi: true },
         });
 
         const homeTeam = await prisma.team.findUnique({
           where: {
-            season_teamIdApi: {
-              season: process.env.SEASON,
-              teamIdApi: game.teams.home.team.id,
-            },
+            teamIdApi: game.teams.home.team.id,
           },
           select: { id: true, teamIdApi: true },
         });
