@@ -143,127 +143,96 @@ const conferenceTeamMap = {
   },
   20202021: {
     NJD: {
-      conference: 6,
       division: 25,
     },
     NYI: {
-      conference: 6,
       division: 25,
     },
     NYR: {
-      conference: 6,
       division: 25,
     },
     PHI: {
-      conference: 6,
       division: 25,
     },
     PIT: {
-      conference: 6,
       division: 25,
     },
     BOS: {
-      conference: 6,
       division: 25,
     },
     BUF: {
-      conference: 6,
       division: 25,
     },
     MTL: {
-      conference: 6,
       division: 28,
     },
     OTT: {
-      conference: 6,
       division: 28,
     },
     TOR: {
-      conference: 6,
       division: 28,
     },
     CAR: {
-      conference: 6,
       division: 26,
     },
     FLA: {
-      conference: 6,
       division: 26,
     },
     TBL: {
-      conference: 6,
       division: 26,
     },
     WSH: {
-      conference: 6,
       division: 25,
     },
     CHI: {
-      conference: 5,
       division: 26,
     },
     DET: {
-      conference: 6,
       division: 26,
     },
     NSH: {
-      conference: 5,
       division: 26,
     },
     STL: {
-      conference: 5,
       division: 27,
     },
     CGY: {
-      conference: 5,
       division: 28,
     },
     COL: {
-      conference: 5,
       division: 27,
     },
     EDM: {
-      conference: 5,
       division: 28,
     },
     VAN: {
-      conference: 5,
       division: 28,
     },
     ANA: {
-      conference: 5,
       division: 27,
     },
     DAL: {
-      conference: 5,
       division: 26,
     },
     LAK: {
-      conference: 5,
       division: 27,
     },
     SJS: {
-      conference: 5,
       division: 27,
     },
     CBJ: {
-      conference: 6,
       division: 26,
     },
     MIN: {
-      conference: 5,
       division: 27,
     },
     WPG: {
-      conference: 5,
       division: 28,
     },
     ARI: {
-      conference: 5,
       division: 27,
     },
     VGK: {
-      conference: 5,
       division: 27,
     },
   },
@@ -271,18 +240,12 @@ const conferenceTeamMap = {
 
 const fetchTeams = async () => {
   try {
+    console.log(
+      `fetchTeams - Starting to fetch teams for season ${process.env.SEASON}`
+    );
+
     for (const team of genericTeamData) {
       try {
-        const teamInDb = await prisma.team.findUnique({
-          where: {
-            season_teamIdApi: {
-              teamIdApi: team.teamId,
-              season: process.env.SEASON,
-            },
-          },
-        });
-        if (teamInDb) continue;
-
         const conferenceIdApi =
           conferenceTeamMap[process.env.SEASON]?.[team.abbreviation]
             ?.conference;
@@ -293,51 +256,95 @@ const fetchTeams = async () => {
         // is not playing on the current season.
         // This allows teams to be added in genericTeamData and have previous
         // seasons fetching still working
-        if (!conferenceIdApi || !divisionIdApi) continue;
+        if (!conferenceIdApi && !divisionIdApi) {
+          console.log(
+            `fetchTeams - Team "${team.name}" is not active on season ${process.env.SEASON}`
+          );
+          continue;
+        }
 
-        const newTeam = {
-          season: process.env.SEASON,
-          teamIdApi: team.teamId,
-          link: team.link,
-          siteLink: generateSiteLink(team.name),
-          name: team.name,
-          teamName: team.teamName,
-          shortName: team.shortName,
-          abbreviation: team.abbreviation,
-          locationName: team.locationName,
-          firstYearOfPlay: Number(team.firstYearOfPlay),
-          officialSiteUrl: team.officialSiteUrl,
-          conference: {
-            connect: {
-              season_conferenceIdApi: {
-                conferenceIdApi,
-                season: process.env.SEASON,
-              },
-            },
-          },
-          division: {
-            connect: {
-              season_divisionIdApi: {
-                divisionIdApi,
-                season: process.env.SEASON,
-              },
-            },
-          },
-          twitterHashtag: team.twitterHashtag,
-          active: team.active,
-        };
+        let teamInDb = await prisma.team.findUnique({
+          where: { teamIdApi: team.teamId },
+        });
 
-        await prisma.team.create({ data: newTeam });
-      } catch ({ name, message }) {
+        // Update team if it was found already in DB
+        if (teamInDb) {
+          console.log(`fetchTeams - Updating team "${team.name}"`);
+
+          await prisma.team.update({
+            where: { id: teamInDb.id },
+            data: {
+              activeSeasons: { create: { season: process.env.SEASON } },
+            },
+          });
+        } else {
+          // Create a new team
+          console.log(`fetchTeams - Creating new team "${team.name}"`);
+          const newTeam = {
+            teamIdApi: team.teamId,
+            link: team.link,
+            siteLink: generateSiteLink(team.name),
+            name: team.name,
+            teamName: team.teamName,
+            shortName: team.shortName,
+            abbreviation: team.abbreviation,
+            locationName: team.locationName,
+            firstYearOfPlay: Number(team.firstYearOfPlay),
+            officialSiteUrl: team.officialSiteUrl,
+            twitterHashtag: team.twitterHashtag,
+            activeSeasons: { create: { season: process.env.SEASON } },
+          };
+          teamInDb = await prisma.team.create({ data: newTeam });
+        }
+
+        // Update conference/division relations
+        if (conferenceIdApi) {
+          const conf = await prisma.conference.findUnique({
+            where: { conferenceIdApi },
+            select: { id: true, name: true },
+          });
+
+          console.log(
+            `fetchTeams - Adding a relation between "${teamInDb.abbreviation}" and "${conf.name}"`
+          );
+
+          await prisma.teamConference.create({
+            data: {
+              season: process.env.SEASON,
+              conference: { connect: { id: conf.id } },
+              team: { connect: { id: teamInDb.id } },
+            },
+          });
+        }
+
+        if (divisionIdApi) {
+          const div = await prisma.division.findUnique({
+            where: { divisionIdApi },
+            select: { id: true, name: true },
+          });
+
+          console.log(
+            `fetchTeams - Adding a relation between "${teamInDb.abbreviation}" and "${div.name}"`
+          );
+
+          await prisma.teamDivision.create({
+            data: {
+              season: process.env.SEASON,
+              division: { connect: { id: div.id } },
+              team: { connect: { id: teamInDb.id } },
+            },
+          });
+        }
+      } catch ({ name, message, stack }) {
         console.error(
-          `fetch-team.fetchTeams.teamLoop - teamId: ${team.id} | name: ${team.shortName}`
+          `fetchTeams.teamLoop - teamId: ${team.id} | name: ${team.shortName}`
         );
-        console.log(`${name}: ${message}`);
+        console.error(`${name}: ${message}`, stack);
       }
     }
-  } catch ({ name, message }) {
-    console.error(`fetch-teams.fetchTeams - url: ${teamsUrl}`);
-    console.error(`${name}: ${message}`);
+    console.log("fetchTeam - Done");
+  } catch (err) {
+    console.error(`fetchTeams - Error: ${err.name}: ${err.message}`, err.stack);
   }
 };
 
