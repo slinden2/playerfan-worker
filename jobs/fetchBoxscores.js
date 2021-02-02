@@ -17,6 +17,36 @@ const getPlayers = require("./getPlayers");
 
 const prisma = new PrismaClient();
 
+const getPlayerCurrentTeam = (player) => {
+  const currentTeam = player.teams.filter((team) => !team.endDate);
+  if (currentTeam.length > 1) {
+    throw new Error(
+      `getPlayerCurrentTeam - Player ${player.id} has more than 1 teams with endDate null`
+    );
+  }
+
+  return currentTeam[0];
+};
+
+const updatePlayerTeam = async (player, prevTeam, newTeam) => {
+  const updatePrevTeam = prisma.playerTeam.update({
+    where: { id: prevTeam.id },
+    data: {
+      endDate: game.apiDate,
+    },
+  });
+
+  const createNewTeam = prisma.playerTeam.create({
+    data: {
+      startDate: game.apiDate,
+      player: { connect: { id: player.id } },
+      team: { connect: { id: newTeam.id } },
+    },
+  });
+
+  await prisma.$transaction([updatePrevTeam, createNewTeam]);
+};
+
 const createBoxscoreObject = (game, player, team, stats, isGoalie) => {
   isGoalie ? (stats = stats.goalieStats) : (stats = stats.skaterStats);
 
@@ -139,64 +169,62 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
       }
       const awayTeam = await prisma.team.findUnique({
         where: {
-          season_teamIdApi: {
-            season: process.env.SEASON,
-            teamIdApi: teams.away.team.id,
-          },
+          teamIdApi: teams.away.team.id,
         },
       });
       const homeTeam = await prisma.team.findUnique({
         where: {
-          season_teamIdApi: {
-            season: process.env.SEASON,
-            teamIdApi: teams.home.team.id,
-          },
+          teamIdApi: teams.home.team.id,
         },
       });
 
       console.log(
         "fetchBoxscores - Checking if there are player teams to update..."
       );
-      // Check that the currentTeam of the player matches to the API data.
+      // Check that the current team of the player matches to the API data.
       // If not, update the player to match the API.
       const playersInDbAway = await prisma.player.findMany({
         where: {
           playerIdApi: { in: [...players.inDb.away, ...players.notInDb.away] },
         },
+        include: {
+          teams: {
+            include: { team: true },
+          },
+        },
       });
 
       for (const player of playersInDbAway) {
-        if (player.teamId !== awayTeam.id) {
-          await prisma.player.update({
-            where: { id: player.id },
-            data: {
-              currentTeam: { connect: { id: awayTeam.id } },
-            },
-          });
+        const currentTeam = getPlayerCurrentTeam(player);
+        if (currentTeam.team.id !== awayTeam.id) {
+          updatePlayerTeam(player, currentTeam, awayTeam);
           console.log(
-            `fetchBoxscores - Updated player ${player.id} team from ${player.teamId} to ${awayTeam.id} (AWAY)`
+            `fetchBoxscores - Updated player ${player.id} team from ${currentTeam.team.id} to ${awayTeam.id} (AWAY)`
           );
         }
       }
+
       // Check also homeTeam players
       const playersInDbHome = await prisma.player.findMany({
         where: {
           playerIdApi: { in: [...players.inDb.home, ...players.notInDb.home] },
         },
+        include: {
+          teams: {
+            include: { team: true },
+          },
+        },
       });
       for (const player of playersInDbHome) {
-        if (player.teamId !== homeTeam.id) {
-          await prisma.player.update({
-            where: { id: player.id },
-            data: {
-              currentTeam: { connect: { id: homeTeam.id } },
-            },
-          });
+        const currentTeam = getPlayerCurrentTeam(player);
+        if (currentTeam.team.id !== homeTeam.id) {
+          updatePlayerTeam(player, currentTeam, homeTeam);
           console.log(
-            `fetchBoxscores - Updated player ${player.id} team from ${player.teamId} to ${homeTeam.id} (HOME)`
+            `fetchBoxscores - Updated player ${player.id} team from ${currentTeam.team.id} to ${awayTeam.id} (HOME)`
           );
         }
       }
+
       const fetchedPlayers = { ...teams.home.players, ...teams.away.players };
       const promiseArray = [];
       for (const player of playersInDbAway) {
@@ -211,7 +239,7 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
       }
 
       console.log("fetchBoxscores - Saving boxscores");
-      await Promise.all(promiseArray);
+      await prisma.$transaction(promiseArray);
 
       await prisma.game.update({
         where: { id: game.id },

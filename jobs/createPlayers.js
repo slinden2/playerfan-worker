@@ -14,7 +14,7 @@ const {
 
 const prisma = new PrismaClient();
 
-const createPlayerObject = (player, team) => {
+const createPlayerObject = (player, team, game) => {
   return {
     playerIdApi: player.id,
     firstName: player.firstName,
@@ -34,12 +34,14 @@ const createPlayerObject = (player, team) => {
     rookie: player.rookie,
     shootsCatches: player.shootsCatches,
     rosterStatus: player.rosterStatus,
-    currentTeam: { connect: { id: team.id } },
     primaryPosition:
       player.primaryPosition.code === "N/A"
         ? "NA"
         : player.primaryPosition.code,
     active: player.active,
+    teams: {
+      create: { team: { connect: { id: team.id } }, startDate: game.apiDate },
+    },
   };
 };
 
@@ -58,16 +60,18 @@ const createPlayers = async (newPlayers, gamePk, teamId) => {
   }
 
   for (const player of playerArray) {
-    const teamInDb = await prisma.team.findUnique({
-      where: {
-        season_teamIdApi: {
-          season: process.env.SEASON,
+    try {
+      const teamInDb = await prisma.team.findUnique({
+        where: {
           teamIdApi: teamId || player.currentTeam.id,
         },
-      },
-    });
-    try {
-      const playerObj = createPlayerObject(player, teamInDb);
+      });
+      const game = await prisma.game.findUnique({
+        where: { gamePk },
+        select: { apiDate: true },
+      });
+      const playerObj = createPlayerObject(player, teamInDb, game);
+
       await prisma.player.create({
         data: playerObj,
       });
