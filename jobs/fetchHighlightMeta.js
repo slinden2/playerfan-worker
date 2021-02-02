@@ -59,7 +59,7 @@ const createMetaDataObject = async (game, goal) => {
 
   const team = await prisma.team.findUnique({
     where: {
-      season_teamIdApi: { season: process.env.SEASON, teamIdApi: goal.team.id },
+      teamIdApi: goal.team.id,
     },
     select: { id: true },
   });
@@ -139,7 +139,7 @@ const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
         );
       }
       console.log("fetchHighlightMeta - Saving highlight metas");
-      await Promise.all(metaPromiseArr);
+      await prisma.$transaction(metaPromiseArr);
       await prisma.game.update({
         where: { id: game.id },
         data: { highlightMetaFetched: true },

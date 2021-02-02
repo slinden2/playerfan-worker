@@ -120,7 +120,7 @@ const fetchPlaybacks = async ({ fetchMode, inputArg }) => {
         playbackPromises.push(...promises);
       }
       console.log("fetchPlaybacks - Saving playbacks");
-      await Promise.all(playbackPromises);
+      await prisma.$transaction(playbackPromises);
       await prisma.game.update({
         where: { id: game.id },
         data: { playbacksFetched: true },

@@ -134,7 +134,7 @@ const fetchLinescores = async ({ fetchMode, inputArg }) => {
       ];
 
       console.log("fetchLinescores - Saving linescores");
-      await Promise.all(linescorePromises);
+      await prisma.$transaction(linescorePromises);
       await prisma.game.update({
         where: { id: game.id },
         data: { linescoresFetched: true },

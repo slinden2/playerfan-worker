@@ -149,7 +149,7 @@ const fetchHighlights = async ({ fetchMode, inputArg }) => {
       }
 
       console.log("fetchHighlights - Saving highlights");
-      await Promise.all(highlightPromises);
+      await prisma.$transaction(highlightPromises);
       await prisma.game.update({
         where: { id: game.id },
         data: { highlightsFetched: true },
