@@ -24,7 +24,7 @@
     "fetchHighlightMeta": "node ./jobs/fetchHighlightMeta.js",
     "fetchPlaybacks": "node ./jobs/fetchPlaybacks.js",
     "fetchDate": "node ./jobs/fetchDate.js",
-    "resetGamesByDate": "node ./jobs/resetGamesByDate"
+    "resetGamesByDate": "node ./scripts/resetGamesByDate"
   },
   "repository": {
     "type": "git",

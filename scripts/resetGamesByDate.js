@@ -3,7 +3,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { PrismaClient } = require("@prisma/client");
-const { validateDate } = require("./fetchHelpers");
+const { validateDate } = require("../jobs/fetchHelpers");
 
 const prisma = new PrismaClient();
 
