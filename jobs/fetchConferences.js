@@ -9,6 +9,9 @@ const prisma = new PrismaClient();
 
 const conferenceUrl = "https://statsapi.web.nhl.com/api/v1/conferences";
 
+/**
+ * Fetches conference from NHL API
+ */
 const fetchConferences = async () => {
   try {
     const response = await axios.get(conferenceUrl);

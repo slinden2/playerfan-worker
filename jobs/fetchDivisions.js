@@ -24,6 +24,9 @@ const divisions = {
   20202021: divisions20202021,
 };
 
+/**
+ * Fetches divisions from json files and saves them in the DB.
+ */
 const fetchDivisions = async () => {
   try {
     console.log(

@@ -1,7 +1,3 @@
-/**
- * This works for season 2019/2020. Divisions changed for 2020/2021 and API not yet updated
- */
-
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
@@ -238,6 +234,10 @@ const conferenceTeamMap = {
   },
 };
 
+/**
+ * Creates new teams from `genericTeamData.json` in there are any not already in DB and
+ * updates conference/division relations for the current season. Manual work required.
+ */
 const fetchTeams = async () => {
   try {
     console.log(

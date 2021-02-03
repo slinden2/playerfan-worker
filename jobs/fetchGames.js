@@ -8,11 +8,16 @@ const { validateDate, gamesUrl, getApiData } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
+/**
+ * Fetchs all games from the API for a date
+ * @param {string} date YYYY-MM-DD
+ */
 const fetchGames = async (date) => {
   const url = gamesUrl(date);
   console.log(`fetchGames - url: ${url}`);
 
   try {
+    // If the games were already fetched, delete them before refetching
     await prisma.game.deleteMany({
       where: { apiDate: new Date(date).toISOString() },
     });

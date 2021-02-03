@@ -15,6 +15,11 @@ const getGames = require("./getGames");
 
 const prisma = new PrismaClient();
 
+/**
+ * Creates a highlightMeta object that can be saved in the DB
+ * @param {*} game Game object from DB
+ * @param {*} goal Goal object from API
+ */
 const createMetaDataObject = async (game, goal) => {
   let scorer;
   let assist1;
@@ -93,6 +98,10 @@ const createMetaDataObject = async (game, goal) => {
   };
 };
 
+/**
+ * Fetches highlightMeta from API. This is practically shot and goal data.
+ * @param {{ fetchMode: string, inputArg: string | undefined }} options fetchMode: (DATE|GAMEPK|FLAG). inputArg not needed with FLAG.
+ */
 const fetchHighlightMeta = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,

@@ -14,6 +14,12 @@ const {
 
 const prisma = new PrismaClient();
 
+/**
+ * Creates a player object to be saved in DB
+ * @param {*} player Player object from API
+ * @param {*} team  Team object from DB
+ * @param {*} game Game object from DB
+ */
 const createPlayerObject = (player, team, game) => {
   return {
     playerIdApi: player.id,
@@ -45,6 +51,13 @@ const createPlayerObject = (player, team, game) => {
   };
 };
 
+/**
+ * Consumes an array of playerIds and creates new player in DB
+ * @param {Array<number>} newPlayers Array of player ID numbers from API
+ * @param {number} gamePk
+ * @param {number} teamId Passed teamIdApi from caller. If not passed, the one available
+ * in the player profile in the API will be used.
+ */
 const createPlayers = async (newPlayers, gamePk, teamId) => {
   console.log(
     `createPlayers - playersToAdd: ${newPlayers} | gamePk: ${gamePk}`

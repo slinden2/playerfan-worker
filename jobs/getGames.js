@@ -7,6 +7,12 @@ const { validateDate } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
+/**
+ * Get games from DB based on options and returns an array.
+ * flags option is used to define based on which flag the games should be queried. For example:
+ * { boxscoresFetched: false } looks for games that have the flag boxscoresFetched set to FALSE.
+ * @param {{ fetchMode: string, inputArg: string | undefined, flags: any }} options fetchMode: (DATE|GAMEPK|FLAG). inputArg not needed with FLAG
+ */
 const getGames = async ({ fetchMode, inputArg, flags }) => {
   let games;
 

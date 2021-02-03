@@ -1,3 +1,6 @@
+/**
+ * Daily script runner. Runs the fetch scripts for a single or multiple dates
+ */
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
@@ -21,6 +24,10 @@ const {
 
 const prisma = new PrismaClient();
 
+/**
+ * Fetches all required data from the API for games that can be then used by other fetchScripts via globalThis
+ * @param {Array} games Array of games from the NHL API
+ */
 const fetchAllApiData = async (games) => {
   const gamePks = games.map((g) => g.gamePk);
   const promises = gamePks.map((gamePk) => {
@@ -36,6 +43,10 @@ const fetchAllApiData = async (games) => {
   });
 };
 
+/**
+ * Runs all daily fetch script for a date
+ * @param {string} date YYYY-MM-DD
+ */
 const fetchDate = async (date) => {
   console.log(`fetchDate - Fetch started for date ${date}`);
   const url = gamesUrl(date);
@@ -57,6 +68,11 @@ const fetchDate = async (date) => {
   console.log(`fetchDate - Fetch completed for date ${date}`);
 };
 
+/**
+ * Fetches data for many dates
+ * @param {string} startDate YYYY-MM-DD
+ * @param {string} endDate YYYY-MM-DD
+ */
 const fetchManyDates = async (startDate, endDate) => {
   const _startDate = new Date(startDate);
   const _endDate = new Date(endDate);

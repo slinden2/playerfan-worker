@@ -15,6 +15,12 @@ const {
 
 const prisma = new PrismaClient();
 
+/**
+ * Extracts a stat from team boxscore of home or away team
+ * @param {*} boxscore Boxscore from API
+ * @param {string} team home or away
+ * @param {string} stat Stat to be extracted from the boxscore
+ */
 const getStat = (boxscore, team, stat) => {
   const skaters = getPlayersWithoutScratches(
     boxscore.teams[team].skaters,
@@ -30,6 +36,13 @@ const getStat = (boxscore, team, stat) => {
   return accumulator;
 };
 
+/**
+ * Creates a linescore object that can be saved in the DB
+ * @param {*} game Game (from DB) to fetch the linescores for
+ * @param {*} linescore Linescore object from the API
+ * @param {*} boxscore Boxscore object from the API
+ * @param {boolean} isHomeGame
+ */
 const getLinescoreObject = (game, linescore, boxscore, isHomeGame) => {
   const homeWins =
     linescore.teams.away.goals < linescore.teams.home.goals ? true : false;
@@ -106,6 +119,10 @@ const getLinescoreObject = (game, linescore, boxscore, isHomeGame) => {
   return teamData;
 };
 
+/**
+ * Script for fetching linescores
+ * @param {{ fetchMode: string, inputArg: string | undefined }} options fetchMode: (DATE|GAMEPK|FLAG). inputArg not needed with FLAG.
+ */
 const fetchLinescores = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,

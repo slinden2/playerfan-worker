@@ -14,6 +14,11 @@ const getGames = require("./getGames");
 
 const prisma = new PrismaClient();
 
+/**
+ * Creates a playback object that can be saved in the DB
+ * @param {*} highlight Highlight object from DB
+ * @param {Array} playbacks Array of playbacks from API
+ */
 const createPlayback = (highlight, playbacks) => {
   const playbackPromises = [];
 
@@ -55,6 +60,10 @@ const createPlayback = (highlight, playbacks) => {
   return playbackPromises;
 };
 
+/**
+ * Fetches playbacks from API.
+ * @param {{ fetchMode: string, inputArg: string | undefined }} options fetchMode: (DATE|GAMEPK|FLAG). inputArg not needed with FLAG.
+ */
 const fetchPlaybacks = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,

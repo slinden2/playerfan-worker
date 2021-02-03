@@ -17,6 +17,10 @@ const getPlayers = require("./getPlayers");
 
 const prisma = new PrismaClient();
 
+/**
+ * Extracts the current team from a player object (DB)
+ * @param {*} player Player object from DB
+ */
 const getPlayerCurrentTeam = (player) => {
   const currentTeam = player.teams.filter((team) => !team.endDate);
   if (currentTeam.length > 1) {
@@ -28,6 +32,13 @@ const getPlayerCurrentTeam = (player) => {
   return currentTeam[0];
 };
 
+/**
+ * Updates the team of a player
+ * @param {*} player player object (DB)
+ * @param {*} prevTeam team object (DB)
+ * @param {*} newTeam team object (DB)
+ * @param {*} game game object (DB)
+ */
 const updatePlayerTeam = async (player, prevTeam, newTeam, game) => {
   const updatePrevTeam = prisma.playerTeam.update({
     where: { id: prevTeam.id },
@@ -47,6 +58,14 @@ const updatePlayerTeam = async (player, prevTeam, newTeam, game) => {
   await prisma.$transaction([updatePrevTeam, createNewTeam]);
 };
 
+/**
+ * Creates an object to be saved in the DB as SkaterBoxscore or GoalieBoxscore
+ * @param {*} game game object (DB)
+ * @param {*} player player object (DB)
+ * @param {*} team team object (DB)
+ * @param {*} stats stats object (API)
+ * @param {boolean} isGoalie
+ */
 const createBoxscoreObject = (game, player, team, stats, isGoalie) => {
   isGoalie ? (stats = stats.goalieStats) : (stats = stats.skaterStats);
 
@@ -111,6 +130,14 @@ const createBoxscoreObject = (game, player, team, stats, isGoalie) => {
   }
 };
 
+/**
+ * Creates a promise to be resolved later in a Prisma transaction.
+ * Defines whether to save it in SkaterBoxscore or GoalieBoxscore
+ * @param {*} fetchedPlayers Stats per player from API
+ * @param {*} game Game object (DB)
+ * @param {*} player Player object (DB)
+ * @param {*} team  Team object (DB)
+ */
 const createBoxscorePromise = (fetchedPlayers, game, player, team) => {
   let { stats } = fetchedPlayers[`ID${player.playerIdApi}`];
   const isGoalie = player.primaryPosition === "G";
@@ -122,6 +149,10 @@ const createBoxscorePromise = (fetchedPlayers, game, player, team) => {
   }
 };
 
+/**
+ * Fetches boxscores from API
+ * @param {{ fetchMode: string, inputArg: string | undefined }} options fetchMode: (DATE|GAMEPK|FLAG). inputArg not needed with FLAG.
+ */
 const fetchBoxscores = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,
@@ -133,6 +164,8 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
 
   for (const game of games) {
     try {
+      // If fetchMode is GAMEPK first reset all data that may have been fetched previosly
+      // to avoid duplicates
       if (fetchMode === "GAMEPK") {
         await prisma.skaterBoxscore.deleteMany({
           where: { gamePk: game.gamePk },
@@ -225,6 +258,7 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
         }
       }
 
+      // Create an object containing all player stats of the game
       const fetchedPlayers = { ...teams.home.players, ...teams.away.players };
       const promiseArray = [];
       for (const player of playersInDbAway) {

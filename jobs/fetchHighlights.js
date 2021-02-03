@@ -16,6 +16,12 @@ const getGames = require("./getGames");
 
 const prisma = new PrismaClient();
 
+/**
+ * Creates a highlight object that can be saved in the DB
+ * @param {string} type CONDENSED|MILESTONE|RECAP
+ * @param {*} game Game object from DB
+ * @param {{ highlightData: *, milestoneData: * }} data Data objects from API
+ */
 const createHighlightObject = (
   type,
   game,
@@ -45,6 +51,10 @@ const createHighlightObject = (
   return obj;
 };
 
+/**
+ * Fetches highlights from API
+ * @param {{ fetchMode: string, inputArg: string | undefined }} options fetchMode: (DATE|GAMEPK|FLAG). inputArg not needed with FLAG.
+ */
 const fetchHighlights = async ({ fetchMode, inputArg }) => {
   const games = await getGames({
     fetchMode,

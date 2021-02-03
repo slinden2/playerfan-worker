@@ -7,6 +7,14 @@ const { getPlayersWithoutScratches } = require("./fetchHelpers");
 
 const prisma = new PrismaClient();
 
+/**
+ * Consumes a teams object from API that contains all players
+ * of a game divided by home and away teams. This function divides
+ * home and away teams further and returns an object with inDb and notInDb
+ * properties. Those properties are divided by home and away teams.
+ * The final values in the team arrays are playerIds from API.
+ * @param {*} teams Team data object from API
+ */
 const getPlayers = async (teams) => {
   const skatersHome = getPlayersWithoutScratches(
     teams.home.skaters,
