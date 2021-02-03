@@ -28,7 +28,7 @@ const getPlayerCurrentTeam = (player) => {
   return currentTeam[0];
 };
 
-const updatePlayerTeam = async (player, prevTeam, newTeam) => {
+const updatePlayerTeam = async (player, prevTeam, newTeam, game) => {
   const updatePrevTeam = prisma.playerTeam.update({
     where: { id: prevTeam.id },
     data: {
@@ -197,7 +197,7 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
       for (const player of playersInDbAway) {
         const currentTeam = getPlayerCurrentTeam(player);
         if (currentTeam.team.id !== awayTeam.id) {
-          updatePlayerTeam(player, currentTeam, awayTeam);
+          updatePlayerTeam(player, currentTeam, awayTeam, game);
           console.log(
             `fetchBoxscores - Updated player ${player.id} team from ${currentTeam.team.id} to ${awayTeam.id} (AWAY)`
           );
@@ -218,7 +218,7 @@ const fetchBoxscores = async ({ fetchMode, inputArg }) => {
       for (const player of playersInDbHome) {
         const currentTeam = getPlayerCurrentTeam(player);
         if (currentTeam.team.id !== homeTeam.id) {
-          updatePlayerTeam(player, currentTeam, homeTeam);
+          updatePlayerTeam(player, currentTeam, homeTeam, game);
           console.log(
             `fetchBoxscores - Updated player ${player.id} team from ${currentTeam.team.id} to ${awayTeam.id} (HOME)`
           );
